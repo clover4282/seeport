@@ -1,0 +1,31 @@
+# Build
+.build/
+DerivedData/
+*.xcodeproj
+xcuserdata/
+.swiftpm/
+
+# Environment
+.env
+
+# macOS
+.DS_Store
+*.swp
+*~
+
+# Xcode
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xccheckout
+*.moved-aside
+*.xcuserstate
+*.xcscmblueprint
+
+# IDE
+.vscode/
+.idea/
+
+# OMC
+.omc/
