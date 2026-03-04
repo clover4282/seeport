@@ -5,7 +5,6 @@ struct HeaderView: View {
     let isScanning: Bool
     let onRefresh: () -> Void
     let onSettings: () -> Void
-    let onQuit: () -> Void
 
     var body: some View {
         HStack {
@@ -45,14 +44,6 @@ struct HeaderView: View {
                 Button(action: onSettings) {
                     Image(systemName: "gearshape")
                         .font(.system(size: 14))
-                        .foregroundColor(Constants.Colors.textSecondary)
-                }
-                .buttonStyle(.plain)
-                .hoverCursor()
-
-                Button(action: onQuit) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 12))
                         .foregroundColor(Constants.Colors.textSecondary)
                 }
                 .buttonStyle(.plain)

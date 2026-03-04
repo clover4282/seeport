@@ -141,16 +141,21 @@ struct PortRowView: View {
         .hoverCursor()
     }
 
+    private func detailSectionHeader(_ title: String) -> some View {
+        Text(title.uppercased())
+            .font(.system(size: 9, weight: .bold))
+            .foregroundColor(Constants.Colors.textSecondary.opacity(0.7))
+            .tracking(1)
+            .padding(.top, 2)
+    }
+
     private func detailRow(_ label: String, _ value: String) -> some View {
         HStack {
             Text(label)
                 .font(.system(size: 11, weight: .medium))
                 .foregroundColor(Constants.Colors.textSecondary)
                 .frame(width: 70, alignment: .trailing)
-            Text(value)
-                .font(.system(size: 12, design: .monospaced))
-                .foregroundColor(Constants.Colors.textPrimary)
-                .lineLimit(1)
+            CopyableValueText(value: value)
             Spacer()
         }
     }
@@ -195,17 +200,47 @@ struct PortRowView: View {
 
             // Detail info
             if let container = port.dockerContainer {
-                detailRow("Container", container.name)
+                detailSectionHeader("Container")
+                detailRow("Name", container.name)
                 detailRow("Image", container.image)
                 detailRow("ID", String(container.id.prefix(12)))
                 detailRow("Status", container.status)
+
+                Divider().background(Color.white.opacity(0.06))
+
+                detailSectionHeader("Network")
+                detailRow("Address", port.address + ":" + String(port.port))
+                detailRow("Protocol", "TCP")
+                if !container.ports.isEmpty {
+                    ForEach(Array(container.ports.enumerated()), id: \.offset) { _, mapping in
+                        detailRow("Mapping", "\(mapping.hostPort) → \(mapping.containerPort)/\(mapping.proto)")
+                    }
+                }
+
+                Divider().background(Color.white.opacity(0.06))
+
+                detailSectionHeader("Classification")
                 detailRow("Category", port.category.rawValue)
+                let tag = CategoryEngine.portTag(port: port.port, dockerImage: container.image)
+                detailRow("Tag", tag)
             } else {
-                detailRow("Process", port.process.name)
+                detailSectionHeader("Process")
+                detailRow("Name", port.process.name)
                 detailRow("PID", "\(port.process.pid)")
                 detailRow("User", port.process.user)
-                detailRow("Address", port.address)
+
+                Divider().background(Color.white.opacity(0.06))
+
+                detailSectionHeader("Network")
+                detailRow("Address", port.address + ":" + String(port.port))
+                detailRow("Protocol", "TCP")
+
+                Divider().background(Color.white.opacity(0.06))
+
+                detailSectionHeader("Classification")
                 detailRow("Category", port.category.rawValue)
+                let tag = CategoryEngine.portTag(port: port.port, dockerImage: nil)
+                detailRow("Tag", tag)
             }
 
             Divider().background(Color.white.opacity(0.1))
@@ -336,5 +371,32 @@ struct PortRowView: View {
             .padding(.vertical, 2)
             .background(color.opacity(0.15))
             .cornerRadius(4)
+    }
+}
+
+struct CopyableValueText: View {
+    let value: String
+    @State private var isHovering = false
+    @State private var showCopied = false
+
+    var body: some View {
+        Text(showCopied ? "Copied!" : value)
+            .font(.system(size: 12, design: .monospaced))
+            .foregroundColor(showCopied ? .green : (isHovering ? .blue : Constants.Colors.textPrimary))
+            .underline(isHovering && !showCopied)
+            .lineLimit(1)
+            .onHover { hovering in
+                isHovering = hovering
+                if hovering { NSCursor.pointingHand.push() }
+                else { NSCursor.pop() }
+            }
+            .onTapGesture {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(value, forType: .string)
+                showCopied = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    showCopied = false
+                }
+            }
     }
 }

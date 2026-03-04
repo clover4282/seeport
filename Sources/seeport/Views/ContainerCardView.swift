@@ -95,10 +95,7 @@ struct ContainerCardView: View {
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(Constants.Colors.textPrimary)
             Spacer()
-            Text(value)
-                .font(.system(size: 12, design: .monospaced))
-                .foregroundColor(Constants.Colors.textSecondary)
-                .lineLimit(1)
+            CopyableValueText(value: value)
         }
         .padding(.horizontal, Constants.Spacing.medium)
         .padding(.vertical, 6)
@@ -136,9 +133,7 @@ private struct PortRowCell: View {
                     }
                 }
 
-            Text(String(mapping.containerPort))
-                .font(.system(size: 13, design: .monospaced))
-                .foregroundColor(Constants.Colors.textPrimary)
+            CopyableValueText(value: String(mapping.containerPort))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(mapping.proto.uppercased())

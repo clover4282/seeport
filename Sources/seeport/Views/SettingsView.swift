@@ -133,20 +133,19 @@ struct SettingsView: View {
     // MARK: - Tab Button
 
     private func settingsTabButton(_ tab: SettingsTab) -> some View {
-        Button(action: { selectedTab = tab }) {
-            HStack(spacing: 4) {
-                Image(systemName: tab.icon)
-                    .font(.system(size: 10))
-                Text(tab.rawValue)
-                    .font(.system(size: 11, weight: selectedTab == tab ? .semibold : .regular))
-            }
-            .foregroundColor(selectedTab == tab ? .white : Constants.Colors.textSecondary)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
-            .background(selectedTab == tab ? Color.blue.opacity(0.4) : Color.clear)
-            .cornerRadius(6)
+        HStack(spacing: 4) {
+            Image(systemName: tab.icon)
+                .font(.system(size: 10))
+            Text(tab.rawValue)
+                .font(.system(size: 11, weight: selectedTab == tab ? .semibold : .regular))
         }
-        .buttonStyle(.plain)
+        .foregroundColor(selectedTab == tab ? .white : Constants.Colors.textSecondary)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(selectedTab == tab ? Color.blue.opacity(0.4) : Color.clear)
+        .cornerRadius(6)
+        .contentShape(Rectangle())
+        .onTapGesture { selectedTab = tab }
         .hoverCursor()
     }
 
@@ -235,6 +234,30 @@ struct SettingsView: View {
                 .hoverCursor()
             }
 
+            // Quit
+            settingsSection("App") {
+                Button(action: {
+                    NSApplication.shared.terminate(nil)
+                }) {
+                    HStack(spacing: Constants.Spacing.large) {
+                        Image(systemName: "power")
+                            .font(.system(size: 14))
+                            .foregroundColor(.red)
+                            .frame(width: 20)
+
+                        Text("Quit Seeport")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.red)
+
+                        Spacer()
+                    }
+                    .padding(.horizontal, Constants.Spacing.large)
+                    .padding(.vertical, 10)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .hoverCursor()
+            }
         }
         .onAppear { checkNotificationStatus() }
         .onChange(of: settings.autoRefreshEnabled) { _ in viewModel.applySettings() }

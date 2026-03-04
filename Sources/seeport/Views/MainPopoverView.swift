@@ -61,9 +61,6 @@ struct MainPopoverView: View {
                 },
                 onSettings: {
                     showSettings = true
-                },
-                onQuit: {
-                    NSApplication.shared.terminate(nil)
                 }
             )
 
