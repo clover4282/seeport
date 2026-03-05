@@ -10,6 +10,7 @@ enum ExternalEditor: String, CaseIterable {
     case intellij = "IntelliJ IDEA"
     case xcode = "Xcode"
     case neovim = "Neovim"
+    case custom = "Custom"
 
     var command: String {
         switch self {
@@ -21,6 +22,7 @@ enum ExternalEditor: String, CaseIterable {
         case .intellij: return "idea"
         case .xcode: return "xed"
         case .neovim: return "nvim"
+        case .custom: return ""
         }
     }
 }
@@ -31,6 +33,7 @@ enum ShellApp: String, CaseIterable {
     case warp = "Warp"
     case alacritty = "Alacritty"
     case kitty = "Kitty"
+    case custom = "Custom"
 
     var bundleId: String {
         switch self {
@@ -39,6 +42,7 @@ enum ShellApp: String, CaseIterable {
         case .warp: return "dev.warp.Warp-Stable"
         case .alacritty: return "org.alacritty"
         case .kitty: return "net.kovidgoyal.kitty"
+        case .custom: return ""
         }
     }
 }
@@ -57,12 +61,28 @@ final class SettingsManager: ObservableObject {
     @Published var shellApp: ShellApp {
         didSet { UserDefaults.standard.set(shellApp.rawValue, forKey: "seeport.shellApp") }
     }
+    @Published var customEditorPath: String {
+        didSet { UserDefaults.standard.set(customEditorPath, forKey: "seeport.customEditorPath") }
+    }
+    @Published var customEditorArgs: String {
+        didSet { UserDefaults.standard.set(customEditorArgs, forKey: "seeport.customEditorArgs") }
+    }
+    @Published var customShellPath: String {
+        didSet { UserDefaults.standard.set(customShellPath, forKey: "seeport.customShellPath") }
+    }
+    @Published var customShellArgs: String {
+        didSet { UserDefaults.standard.set(customShellArgs, forKey: "seeport.customShellArgs") }
+    }
 
     private init() {
         let editorRaw = UserDefaults.standard.string(forKey: "seeport.externalEditor") ?? ""
         externalEditor = ExternalEditor(rawValue: editorRaw) ?? .vscode
         let shellRaw = UserDefaults.standard.string(forKey: "seeport.shellApp") ?? ""
         shellApp = ShellApp(rawValue: shellRaw) ?? .iterm
+        customEditorPath = UserDefaults.standard.string(forKey: "seeport.customEditorPath") ?? ""
+        customEditorArgs = UserDefaults.standard.string(forKey: "seeport.customEditorArgs") ?? ""
+        customShellPath = UserDefaults.standard.string(forKey: "seeport.customShellPath") ?? ""
+        customShellArgs = UserDefaults.standard.string(forKey: "seeport.customShellArgs") ?? ""
     }
 
     func resetToDefaults() {
@@ -73,5 +93,9 @@ final class SettingsManager: ObservableObject {
         notifyRemovedPort = false
         externalEditor = .vscode
         shellApp = .iterm
+        customEditorPath = ""
+        customEditorArgs = ""
+        customShellPath = ""
+        customShellArgs = ""
     }
 }

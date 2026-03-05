@@ -2,20 +2,11 @@ import SwiftUI
 
 struct MainPopoverView: View {
     @StateObject private var viewModel = PortListViewModel()
-    @State private var showSettings = false
 
     var body: some View {
-        ZStack {
-            mainContent
-                .opacity(showSettings ? 0 : 1)
-
-            if showSettings {
-                SettingsView(viewModel: viewModel, isPresented: $showSettings)
-            }
-        }
-        .frame(width: Constants.popoverWidth, height: Constants.popoverHeight)
-        .background(Constants.Colors.background)
-        .onDisappear { showSettings = false }
+        mainContent
+            .frame(width: Constants.popoverWidth, height: Constants.popoverHeight)
+            .background(Constants.Colors.background)
     }
 
     private var dockerContainerList: some View {
@@ -94,7 +85,7 @@ struct MainPopoverView: View {
                     Task { await viewModel.refresh() }
                 },
                 onSettings: {
-                    showSettings = true
+                    SettingsWindowController.shared.open(viewModel: viewModel)
                 }
             )
 
