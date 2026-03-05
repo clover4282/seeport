@@ -6,6 +6,27 @@
         <description>Most recent updates for Seeport</description>
         <language>en</language>
         <item>
+            <title>Version 0.2</title>
+            <sparkle:version>0.2</sparkle:version>
+            <sparkle:shortVersionString>0.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <ul>
+                    <li>Makefile-based build system</li>
+                    <li>Settings window controller</li>
+                    <li>Custom editor and shell support</li>
+                    <li>README documentation</li>
+                </ul>
+            ]]></description>
+            <pubDate>Wed, 05 Mar 2026 12:00:00 +0000</pubDate>
+            <enclosure
+                url="https://github.com/clover4282/seeport/releases/download/v0.2/seeport-v0.2.zip"
+                type="application/octet-stream"
+                sparkle:edSignature="NcpMdFj4DckJUmyajmboxQv3Dz4I1S2Ua4YW9EOzw3SunQXCRfeefO5HUBO201OwNrvrWP2FxUWeuLESe/7sBQ=="
+                length="3953599"
+            />
+        </item>
+        <item>
             <title>Version 0.1</title>
             <sparkle:version>0.1</sparkle:version>
             <sparkle:shortVersionString>0.1</sparkle:shortVersionString>
