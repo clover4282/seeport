@@ -9,9 +9,9 @@
     <key>CFBundleDisplayName</key>
     <string>seeport</string>
     <key>CFBundleVersion</key>
-    <string>1.0</string>
+    <string>0.1</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
+    <string>0.1</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>LSUIElement</key>
@@ -20,5 +20,12 @@
     <string>https://clover4282.github.io/seeport/appcast.xml</string>
     <key>SUEnableAutomaticChecks</key>
     <true/>
+    <key>SUPublicEDKey</key>
+    <string>EOVhN+2Y4APnxRyU9MPkJPlJ+YgLQfbE9ORT74Zln5k=</string>
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+    </dict>
 </dict>
 </plist>

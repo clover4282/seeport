@@ -364,7 +364,27 @@ struct SettingsView: View {
 
             flatSection("Updates") {
                 Button(action: {
-                    SeeportDelegate.updater.checkForUpdates()
+                    let updater = SeeportDelegate.updater
+                    NSApp.setActivationPolicy(.regular)
+
+                    // Lower Settings window level so Sparkle window appears on top
+                    let settingsWindow = NSApp.windows.first { $0.title == "Seeport Settings" }
+                    settingsWindow?.level = .normal
+
+                    NSApp.activate(ignoringOtherApps: true)
+                    updater.checkForUpdates()
+
+                    // Restore after Sparkle session ends
+                    Task {
+                        try? await Task.sleep(nanoseconds: 2_000_000_000)
+                        while updater.sessionInProgress {
+                            try? await Task.sleep(nanoseconds: 500_000_000)
+                        }
+                        await MainActor.run {
+                            settingsWindow?.level = .floating
+                            NSApp.setActivationPolicy(.accessory)
+                        }
+                    }
                 }) {
                     HStack {
                         Text("Check for Updates")
