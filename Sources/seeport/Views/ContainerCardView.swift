@@ -26,10 +26,7 @@ struct ContainerCardView: View {
             // Project path
             if let projectPath = container.projectPath {
                 Spacer().frame(height: 10)
-
-                infoSection {
-                    infoRow("Project", value: projectPath)
-                }
+                ProjectPathSection(path: projectPath)
             }
 
             // Port Forwards

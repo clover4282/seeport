@@ -58,60 +58,7 @@ struct PortCardView: View {
             // Project path
             if let projectPath = port.projectPath {
                 Spacer().frame(height: 10)
-
-                infoSection {
-                    infoRow("Project", value: projectPath)
-                }
-
-                // Editor / Shell buttons
-                HStack(spacing: 6) {
-                    Button(action: {
-                        let cmd = settings.externalEditor.command
-                        Task {
-                            await ShellExecutor.runAsync("\(cmd) \"\(projectPath)\" &")
-                        }
-                    }) {
-                        HStack(spacing: 3) {
-                            Image(systemName: "pencil.and.outline")
-                                .font(.system(size: 9))
-                            Text(settings.externalEditor.rawValue)
-                                .font(.system(size: 9, weight: .medium))
-                        }
-                        .foregroundColor(.blue)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(Color.blue.opacity(0.12))
-                        .cornerRadius(4)
-                    }
-                    .buttonStyle(.plain)
-                    .hoverCursor()
-
-                    Button(action: {
-                        let bundleId = settings.shellApp.bundleId
-                        let url = URL(fileURLWithPath: projectPath)
-                        if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) {
-                            let config = NSWorkspace.OpenConfiguration()
-                            NSWorkspace.shared.open([url], withApplicationAt: appURL, configuration: config)
-                        }
-                    }) {
-                        HStack(spacing: 3) {
-                            Image(systemName: "terminal")
-                                .font(.system(size: 9))
-                            Text(settings.shellApp.rawValue)
-                                .font(.system(size: 9, weight: .medium))
-                        }
-                        .foregroundColor(.green)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(Color.green.opacity(0.12))
-                        .cornerRadius(4)
-                    }
-                    .buttonStyle(.plain)
-                    .hoverCursor()
-
-                    Spacer()
-                }
-                .padding(.top, 6)
+                ProjectPathSection(path: projectPath)
             }
 
             // Action buttons

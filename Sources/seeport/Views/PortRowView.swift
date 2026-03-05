@@ -87,12 +87,16 @@ struct PortRowView: View {
 
             Spacer()
 
-            // Favorite indicator (always visible, no hover needed)
-            if port.isFavorite {
-                Image(systemName: "star.fill")
+            // Favorite toggle (always visible)
+            Button(action: {
+                onToggleFavorite()
+            }) {
+                Image(systemName: port.isFavorite ? "star.fill" : "star")
                     .font(.system(size: 11))
-                    .foregroundColor(.yellow)
+                    .foregroundColor(port.isFavorite ? .yellow : Constants.Colors.textSecondary.opacity(0.4))
             }
+            .buttonStyle(.plain)
+            .hoverCursor()
         }
         .padding(.horizontal, Constants.Spacing.xlarge)
         .padding(.vertical, Constants.Spacing.medium)
@@ -226,9 +230,8 @@ struct PortRowView: View {
 
                 if let projectPath = port.projectPath {
                     Divider().background(Color.white.opacity(0.06))
-                    detailSectionHeader("Project")
-                    detailRow("Path", projectPath)
-                    projectActions(projectPath)
+                    ProjectPathSection(path: projectPath)
+                        .padding(.top, 4)
                 }
             } else {
                 detailSectionHeader("Process")
@@ -251,9 +254,8 @@ struct PortRowView: View {
 
                 if let projectPath = port.projectPath {
                     Divider().background(Color.white.opacity(0.06))
-                    detailSectionHeader("Project")
-                    detailRow("Path", projectPath)
-                    projectActions(projectPath)
+                    ProjectPathSection(path: projectPath)
+                        .padding(.top, 4)
                 }
             }
 
@@ -356,57 +358,6 @@ struct PortRowView: View {
         .padding(Constants.Spacing.large)
         .frame(width: 280)
         .background(Constants.Colors.background)
-    }
-
-    private func projectActions(_ path: String) -> some View {
-        HStack(spacing: 6) {
-            Button(action: {
-                let cmd = settings.externalEditor.command
-                Task {
-                    await ShellExecutor.runAsync("\(cmd) \"\(path)\" &")
-                }
-            }) {
-                HStack(spacing: 3) {
-                    Image(systemName: "pencil.and.outline")
-                        .font(.system(size: 9))
-                    Text(settings.externalEditor.rawValue)
-                        .font(.system(size: 9, weight: .medium))
-                }
-                .foregroundColor(.blue)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background(Color.blue.opacity(0.12))
-                .cornerRadius(4)
-            }
-            .buttonStyle(.plain)
-            .hoverCursor()
-
-            Button(action: {
-                let bundleId = settings.shellApp.bundleId
-                let url = URL(fileURLWithPath: path)
-                if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) {
-                    let config = NSWorkspace.OpenConfiguration()
-                    NSWorkspace.shared.open([url], withApplicationAt: appURL, configuration: config)
-                }
-            }) {
-                HStack(spacing: 3) {
-                    Image(systemName: "terminal")
-                        .font(.system(size: 9))
-                    Text(settings.shellApp.rawValue)
-                        .font(.system(size: 9, weight: .medium))
-                }
-                .foregroundColor(.green)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background(Color.green.opacity(0.12))
-                .cornerRadius(4)
-            }
-            .buttonStyle(.plain)
-            .hoverCursor()
-
-            Spacer()
-        }
-        .padding(.leading, 78)
     }
 
     private var dockerBadge: some View {

@@ -113,7 +113,18 @@ struct MainPopoverView: View {
                 .background(Color.white.opacity(0.1))
                 .padding(.horizontal, Constants.Spacing.xlarge)
 
-            if viewModel.selectedTab == .docker {
+            if viewModel.selectedTab == .all {
+                PortListView(
+                    groupedPorts: viewModel.groupedPorts,
+                    processIcons: viewModel.processIcons,
+                    onToggleFavorite: { viewModel.toggleFavorite($0) },
+                    onKill: { port in
+                        Task { await viewModel.killProcess(port) }
+                    },
+                    onMoveToOther: { viewModel.moveToOther($0) },
+                    onRestore: { viewModel.restoreCategory($0) }
+                )
+            } else if viewModel.selectedTab == .docker {
                 dockerContainerList
             } else {
                 portCardList

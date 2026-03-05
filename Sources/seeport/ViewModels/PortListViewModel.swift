@@ -4,6 +4,7 @@ import AppKit
 import UserNotifications
 
 enum FilterTab: String, CaseIterable {
+    case all = "All"
     case local = "Local"
     case docker = "Docker"
     case favorites = "Favorites"
@@ -13,7 +14,7 @@ enum FilterTab: String, CaseIterable {
 final class PortListViewModel: ObservableObject {
     @Published var ports: [PortInfo] = []
     @Published var searchText = ""
-    @Published var selectedTab: FilterTab = .local
+    @Published var selectedTab: FilterTab = .all
     @Published var isScanning = false
     @Published var lastScanTime: Date?
     @Published var portCount: Int = 0
@@ -48,7 +49,7 @@ final class PortListViewModel: ObservableObject {
 
         // Tab filter
         switch selectedTab {
-        case .docker:
+        case .all, .docker:
             break
         case .local:
             result = result.filter { $0.category != .system && $0.category != .other && $0.dockerContainer == nil }
@@ -317,6 +318,7 @@ final class PortListViewModel: ObservableObject {
 
     func tabCount(for tab: FilterTab) -> Int {
         switch tab {
+        case .all: return ports.count
         case .local: return ports.filter { $0.category != .system && $0.category != .other && $0.dockerContainer == nil }.count
         case .docker: return dockerContainers.count
         case .favorites: return ports.filter { $0.isFavorite }.count
