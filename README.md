@@ -19,6 +19,7 @@ Seeport runs in your macOS menu bar and provides instant visibility into what's 
 - Optional HTTP server (port 7777) with web UI and JSON API
 - Auto-refresh with configurable interval
 - New port / port closed notifications
+- In-app bug reporting (via system email client)
 - Sparkle auto-update support
 
 ## Getting Started
@@ -88,20 +89,14 @@ Access settings by clicking the gear icon in the popover header:
 - Auto-refresh enabled/disabled
 - Refresh interval (5-60 seconds)
 
-**Display**
-- Theme options
-- Font size
-
-**External Tools**
-- Configure preferred editor (VSCode, Cursor, Zed, Sublime, Atom)
-- Configure preferred shell (iTerm2, Terminal, Warp, Alacritty)
-
-**License**
-- 30-day free trial
-- Paddle license activation
+**Tools**
+- Configure preferred editor (VSCode, Cursor, Zed, Sublime, Atom, custom)
+- Configure preferred shell (iTerm2, Terminal, Warp, Alacritty, custom)
 
 **About**
-- Version info and credits
+- Version info and links
+- Report a Bug (opens system email client with pre-filled details)
+- Check for Updates (Sparkle)
 
 ## Development
 
@@ -128,10 +123,10 @@ make clean
 
 ```bash
 # Create signed release zip (requires Sparkle signing tools)
-make release VERSION=0.2
+make release VERSION=1.0
 
 # Publish release to GitHub (requires gh CLI)
-make deploy VERSION=0.2
+make deploy VERSION=1.0
 ```
 
 ### Testing
@@ -239,7 +234,7 @@ make test-servers-stop
 - **Bundle ID**: `com.seeport.app`
 - **Architecture**: arm64 (Apple Silicon)
 - **Menu Bar Style**: MenuBarExtra with window styling
-- **App Icon**: Programmatically generated via Core Graphics
+- **App Icon**: AppIcon.icns in Resources/
 - **Activation Policy**: Accessory (menu bar only, no dock icon)
 
 ## Configuration
@@ -308,6 +303,7 @@ Sources/seeport/
 │   ├── SettingsView.swift         # Settings tabs
 │   ├── SearchBarView.swift        # Search input
 │   ├── FilterTabsView.swift       # Tab navigation
+│   ├── BugReportView.swift       # Bug report with email
 │   └── Other UI components
 ├── Utilities/
 │   ├── ShellExecutor.swift        # Process wrapper
@@ -320,7 +316,8 @@ Sources/seeport/
 │   ├── PortDatabase.swift         # Port → service mapping
 │   └── EnvLoader.swift            # Environment config
 └── Resources/
-    └── Info.plist                  # App metadata
+    ├── Info.plist                  # App metadata
+    └── AppIcon.icns               # App icon
 ```
 
 ## License
