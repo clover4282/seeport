@@ -30,6 +30,9 @@ fi
 
 echo "App bundle created at .build/seeport.app"
 
+# Add rpath so the executable can find Sparkle.framework in Frameworks/
+install_name_tool -add_rpath @executable_path/../Frameworks "$APP_DIR/MacOS/seeport" 2>/dev/null || true
+
 # Ad-hoc code sign (deep to include frameworks)
 codesign --force --deep --sign - .build/seeport.app
 
