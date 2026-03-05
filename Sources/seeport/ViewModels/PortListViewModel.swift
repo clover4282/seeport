@@ -195,11 +195,14 @@ final class PortListViewModel: ObservableObject {
         }
     }
 
+    private var lastKnownPortInfo: [UInt16: PortInfo] = [:]
+
     private func sendNotification(for port: PortInfo) {
         let name = port.dockerContainer?.name ?? port.process.name
+        let tag = CategoryEngine.portTag(port: port.port, dockerImage: port.dockerContainer?.image)
         let content = UNMutableNotificationContent()
-        content.title = "New port detected"
-        content.body = "Port \(port.port) — \(name)"
+        content.title = "\(name) · :\(port.port)"
+        content.body = "localhost:\(port.port) is now listening (\(tag))"
         content.sound = .default
 
         // Attach process icon
@@ -207,6 +210,8 @@ final class PortListViewModel: ObservableObject {
            let attachment = saveIconAttachment(icon: icon, pid: port.process.pid) {
             content.attachments = [attachment]
         }
+
+        lastKnownPortInfo[port.port] = port
 
         let request = UNNotificationRequest(
             identifier: "seeport.newport.\(port.port)",
@@ -218,9 +223,16 @@ final class PortListViewModel: ObservableObject {
 
     private func sendRemovedNotification(port: UInt16) {
         let content = UNMutableNotificationContent()
-        content.title = "Port closed"
-        content.body = "Port \(port) is no longer listening"
+        if let info = lastKnownPortInfo[port] {
+            let name = info.dockerContainer?.name ?? info.process.name
+            content.title = "\(name) · :\(port)"
+            content.body = "localhost:\(port) stopped listening"
+        } else {
+            content.title = "Port \(port)"
+            content.body = "localhost:\(port) stopped listening"
+        }
         content.sound = .default
+        lastKnownPortInfo.removeValue(forKey: port)
 
         let request = UNNotificationRequest(
             identifier: "seeport.removedport.\(port)",

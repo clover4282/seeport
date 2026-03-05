@@ -174,7 +174,7 @@ struct PortRowView: View {
                         .frame(width: 20, height: 20)
                         .cornerRadius(4)
                 }
-                Text("Port " + String(port.port))
+                Text(verbatim: "Port \(port.port)")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(Constants.Colors.textPrimary)
                 Spacer()
@@ -187,7 +187,7 @@ struct PortRowView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "safari")
                             .font(.system(size: 11))
-                        Text("Open")
+                        Text(verbatim: "localhost:\(port.port)")
                             .font(.system(size: 11, weight: .medium))
                     }
                     .foregroundColor(.blue)

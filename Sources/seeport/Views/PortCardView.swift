@@ -29,18 +29,20 @@ struct PortCardView: View {
                             .lineLimit(1)
                         portTagBadge
                     }
-                    Text("Port \(port.port)")
+                    Text(verbatim: "Port \(port.port)")
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundColor(port.category.color)
                 }
 
                 Spacer()
 
-                if port.isFavorite {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 12))
-                        .foregroundColor(.yellow)
+                Button(action: { onToggleFavorite() }) {
+                    Image(systemName: port.isFavorite ? "star.fill" : "star")
+                        .font(.system(size: 14))
+                        .foregroundColor(port.isFavorite ? .yellow : .gray.opacity(0.5))
                 }
+                .buttonStyle(.plain)
+                .hoverCursor()
             }
             .padding(.bottom, 10)
 
@@ -65,15 +67,7 @@ struct PortCardView: View {
             Spacer().frame(height: 10)
 
             HStack(spacing: 8) {
-                cardActionButton(
-                    port.isFavorite ? "Unfavorite" : "Favorite",
-                    icon: port.isFavorite ? "star.fill" : "star",
-                    color: port.isFavorite ? .yellow : .gray
-                ) {
-                    onToggleFavorite()
-                }
-
-                cardActionButton("Open", icon: "safari", color: .blue) {
+                cardActionButton("localhost:\(port.port)", icon: "safari", color: .blue) {
                     if let url = URL(string: "http://localhost:\(port.port)") {
                         NSWorkspace.shared.open(url)
                     }

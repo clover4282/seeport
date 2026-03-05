@@ -2,17 +2,43 @@ import Foundation
 
 actor DockerService {
     private(set) var isAvailable = false
+    private var dockerPath = "docker"
+
+    private static let dockerSearchPaths = [
+        "/usr/local/bin/docker",
+        "/opt/homebrew/bin/docker",
+        "/usr/bin/docker",
+        "/Applications/Docker.app/Contents/Resources/bin/docker",
+        "/Applications/OrbStack.app/Contents/MacOS/xbin/docker",
+    ]
 
     func checkAvailability() async {
+        // GUI apps launched via launchd have a minimal PATH that excludes
+        // /usr/local/bin, /opt/homebrew/bin, etc. Search known paths directly.
+        let fm = FileManager.default
+        if let found = Self.dockerSearchPaths.first(where: { fm.isExecutableFile(atPath: $0) }) {
+            dockerPath = found
+            isAvailable = true
+            return
+        }
+        // Fallback: try PATH lookup (works when launched from terminal)
         let result = await ShellExecutor.runAsync("which docker 2>/dev/null")
-        isAvailable = result.exitCode == 0 && !result.output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        if result.exitCode == 0 {
+            let path = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !path.isEmpty {
+                dockerPath = path
+                isAvailable = true
+                return
+            }
+        }
+        isAvailable = false
     }
 
     func fetchContainers() async -> [DockerContainer] {
         guard isAvailable else { return [] }
 
         let result = await ShellExecutor.runAsync(
-            "docker ps --format '{{.ID}}\\t{{.Names}}\\t{{.Ports}}\\t{{.Image}}\\t{{.Status}}' 2>/dev/null"
+            "\(dockerPath) ps --format '{{.ID}}\\t{{.Names}}\\t{{.Ports}}\\t{{.Image}}\\t{{.Status}}' 2>/dev/null"
         )
         guard result.exitCode == 0 else { return [] }
         return parse(result.output)
@@ -95,7 +121,7 @@ actor DockerService {
         for container in containers {
             var c = container
             let result = await ShellExecutor.runAsync(
-                "docker inspect --format '{{range .Mounts}}{{if eq .Type \"bind\"}}{{.Source}}{{\"\\n\"}}{{end}}{{end}}' \(container.id) 2>/dev/null"
+                "\(dockerPath) inspect --format '{{range .Mounts}}{{if eq .Type \"bind\"}}{{.Source}}{{\"\\n\"}}{{end}}{{end}}' \(container.id) 2>/dev/null"
             )
             if result.exitCode == 0 {
                 let lines = result.output.split(separator: "\n", omittingEmptySubsequences: true)
@@ -112,17 +138,17 @@ actor DockerService {
     }
 
     func stop(id: String) async -> Bool {
-        let result = await ShellExecutor.runAsync("docker stop \(id) 2>/dev/null")
+        let result = await ShellExecutor.runAsync("\(dockerPath) stop \(id) 2>/dev/null")
         return result.exitCode == 0
     }
 
     func start(id: String) async -> Bool {
-        let result = await ShellExecutor.runAsync("docker start \(id) 2>/dev/null")
+        let result = await ShellExecutor.runAsync("\(dockerPath) start \(id) 2>/dev/null")
         return result.exitCode == 0
     }
 
     func restart(id: String) async -> Bool {
-        let result = await ShellExecutor.runAsync("docker restart \(id) 2>/dev/null")
+        let result = await ShellExecutor.runAsync("\(dockerPath) restart \(id) 2>/dev/null")
         return result.exitCode == 0
     }
 

@@ -55,11 +55,12 @@ struct ProjectPathSection: View {
                             try? process.run()
                         }
                     } else {
-                        let cmd = settings.externalEditor.command
+                        // Use `open -a` to avoid PATH issues in GUI app context
+                        let appName = settings.externalEditor.rawValue
                         Task {
                             let process = Process()
-                            process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-                            process.arguments = [cmd, path]
+                            process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+                            process.arguments = ["-a", appName, path]
                             try? process.run()
                         }
                     }
@@ -89,12 +90,7 @@ struct ProjectPathSection: View {
                             try? process.run()
                         }
                     } else {
-                        let bundleId = settings.shellApp.bundleId
-                        let url = URL(fileURLWithPath: path)
-                        if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) {
-                            let config = NSWorkspace.OpenConfiguration()
-                            NSWorkspace.shared.open([url], withApplicationAt: appURL, configuration: config)
-                        }
+                        openShellNewWindow(app: settings.shellApp, path: path)
                     }
                 }
 
@@ -136,6 +132,45 @@ struct ProjectPathSection: View {
         case .custom:
             let name = URL(fileURLWithPath: settings.customShellPath).deletingPathExtension().lastPathComponent
             return name.isEmpty ? "Shell" : name
+        }
+    }
+
+    private func openShellNewWindow(app: ShellApp, path: String) {
+        let escapedPath = path.replacingOccurrences(of: "'", with: "'\\''")
+        let script: String
+        switch app {
+        case .iterm:
+            script = """
+            tell application "iTerm2"
+                activate
+                set newWindow to (create window with default profile)
+                tell current session of newWindow
+                    write text "cd '\(escapedPath)'"
+                end tell
+            end tell
+            """
+        case .terminal:
+            script = """
+            tell application "Terminal"
+                activate
+                do script "cd '\(escapedPath)'"
+            end tell
+            """
+        default:
+            // For other shells, use open -a with new instance
+            Task {
+                let process = Process()
+                process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+                process.arguments = ["-n", "-a", app.rawValue, path]
+                try? process.run()
+            }
+            return
+        }
+        Task {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+            process.arguments = ["-e", script]
+            try? process.run()
         }
     }
 

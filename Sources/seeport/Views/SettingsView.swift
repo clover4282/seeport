@@ -112,7 +112,7 @@ struct SettingsView: View {
             flatSection("Notifications") {
                 flatToggleRow("New port detected", isOn: $settings.notifyNewPort)
                 flatDivider
-                flatToggleRow("Port closed", isOn: $settings.notifyRemovedPort)
+                flatToggleRow("Port closed detected", isOn: $settings.notifyRemovedPort)
                 flatDivider
 
                 HStack {
@@ -130,7 +130,7 @@ struct SettingsView: View {
                 flatDivider
 
                 Button(action: {
-                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") {
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension?id=com.seeport.app") {
                         NSWorkspace.shared.open(url)
                     }
                 }) {

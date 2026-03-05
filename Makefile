@@ -1,3 +1,4 @@
+SHELL       := /bin/zsh
 APP_NAME    := seeport
 BUNDLE      := .build/$(APP_NAME).app
 APP_DIR     := $(BUNDLE)/Contents
@@ -82,13 +83,17 @@ deploy: release
 
 test-servers:
 	@echo "Starting Python test servers..."
-	@python3 -m http.server 8080 & echo "  Server 1: http://localhost:8080 (PID: $$!)"
-	@python3 -m http.server 3000 & echo "  Server 2: http://localhost:3000 (PID: $$!)"
-	@python3 -m http.server 9999 & echo "  Server 3: http://localhost:9999 (PID: $$!)"
-	@echo "\nAll servers running. Run 'make test-servers-stop' to stop."
+	@python3 -m http.server 8080 &>/dev/null & \
+	 echo "  Server 1: http://localhost:8080 (PID: $$!)"; \
+	 python3 -m http.server 13000 &>/dev/null & \
+	 echo "  Server 2: http://localhost:13000 (PID: $$!)"; \
+	 python3 -m http.server 9999 &>/dev/null & \
+	 echo "  Server 3: http://localhost:9999 (PID: $$!)"; \
+	 echo "\nAll servers running. Run 'make test-servers-stop' to stop."
 
 test-servers-stop:
-	@pkill -f "python3 -m http.server 8080" 2>/dev/null || true
-	@pkill -f "python3 -m http.server 3000" 2>/dev/null || true
-	@pkill -f "python3 -m http.server 9999" 2>/dev/null || true
+	@for port in 8080 13000 9999; do \
+		pid=$$(lsof -ti TCP:$$port -sTCP:LISTEN 2>/dev/null); \
+		[ -n "$$pid" ] && kill $$pid 2>/dev/null && echo "  Stopped port $$port (PID: $$pid)" || true; \
+	done
 	@echo "All test servers stopped."
