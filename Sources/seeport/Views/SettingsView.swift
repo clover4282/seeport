@@ -182,6 +182,25 @@ struct SettingsView: View {
                 }
             }
 
+            // External Tools
+            settingsSection("External Tools") {
+                VStack(alignment: .leading, spacing: 0) {
+                    settingsPickerRow(
+                        title: "External Editor",
+                        selection: $settings.externalEditor,
+                        allCases: ExternalEditor.allCases
+                    )
+
+                    Divider().background(Color.white.opacity(0.06))
+
+                    settingsPickerRow(
+                        title: "Shell",
+                        selection: $settings.shellApp,
+                        allCases: ShellApp.allCases
+                    )
+                }
+            }
+
             // Notifications section
             settingsSection("Notifications") {
                 HStack(spacing: Constants.Spacing.large) {
@@ -203,6 +222,24 @@ struct SettingsView: View {
                 }
                 .padding(.horizontal, Constants.Spacing.large)
                 .padding(.vertical, 10)
+
+                Divider().background(Color.white.opacity(0.06))
+
+                settingsToggleRow(
+                    icon: "plus.circle",
+                    title: "New port detected",
+                    subtitle: "Notify when a new port starts listening",
+                    isOn: $settings.notifyNewPort
+                )
+
+                Divider().background(Color.white.opacity(0.06))
+
+                settingsToggleRow(
+                    icon: "minus.circle",
+                    title: "Port closed",
+                    subtitle: "Notify when a port stops listening",
+                    isOn: $settings.notifyRemovedPort
+                )
 
                 Divider().background(Color.white.opacity(0.06))
 
@@ -648,6 +685,28 @@ struct SettingsView: View {
         }
         .padding(.horizontal, Constants.Spacing.large)
         .padding(.vertical, 8)
+    }
+
+    private func settingsPickerRow<T: RawRepresentable & Hashable>(
+        title: String,
+        selection: Binding<T>,
+        allCases: [T]
+    ) -> some View where T.RawValue == String {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(Constants.Colors.textPrimary)
+
+            Picker("", selection: selection) {
+                ForEach(allCases, id: \.self) { item in
+                    Text(item.rawValue).tag(item)
+                }
+            }
+            .labelsHidden()
+            .frame(maxWidth: .infinity)
+        }
+        .padding(.horizontal, Constants.Spacing.large)
+        .padding(.vertical, 10)
     }
 
     private func aboutRow(_ label: String, value: String) -> some View {

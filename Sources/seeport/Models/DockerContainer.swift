@@ -6,6 +6,7 @@ struct DockerContainer: Identifiable, Hashable {
     let image: String
     let status: String
     let ports: [PortMapping]
+    var projectPath: String?
 
     struct PortMapping: Hashable {
         let hostPort: UInt16

@@ -8,6 +8,7 @@ struct PortInfo: Identifiable, Hashable {
     let address: String
     var isFavorite: Bool
     var dockerContainer: DockerContainer?
+    var projectPath: String?
 
     init(
         port: UInt16,
@@ -15,7 +16,8 @@ struct PortInfo: Identifiable, Hashable {
         category: PortCategory = .other,
         address: String = "127.0.0.1",
         isFavorite: Bool = false,
-        dockerContainer: DockerContainer? = nil
+        dockerContainer: DockerContainer? = nil,
+        projectPath: String? = nil
     ) {
         self.id = "\(port)-\(process.pid)"
         self.port = port
@@ -24,6 +26,7 @@ struct PortInfo: Identifiable, Hashable {
         self.address = address
         self.isFavorite = isFavorite
         self.dockerContainer = dockerContainer
+        self.projectPath = projectPath
     }
 
     func hash(into hasher: inout Hasher) {

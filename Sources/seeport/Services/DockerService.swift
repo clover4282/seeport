@@ -44,7 +44,8 @@ actor DockerService {
                 name: name,
                 image: image,
                 status: status,
-                ports: taggedMappings
+                ports: taggedMappings,
+                projectPath: nil
             ))
         }
 
@@ -87,6 +88,42 @@ actor DockerService {
             let key = "\(m.hostPort)-\(m.containerPort)-\(m.proto)"
             return seen.insert(key).inserted
         }
+    }
+
+    func enrichWithProjectPaths(_ containers: [DockerContainer]) async -> [DockerContainer] {
+        var enriched: [DockerContainer] = []
+        for container in containers {
+            var c = container
+            let result = await ShellExecutor.runAsync(
+                "docker inspect --format '{{range .Mounts}}{{if eq .Type \"bind\"}}{{.Source}}{{\"\\n\"}}{{end}}{{end}}' \(container.id) 2>/dev/null"
+            )
+            if result.exitCode == 0 {
+                let lines = result.output.split(separator: "\n", omittingEmptySubsequences: true)
+                if let first = lines.first {
+                    let path = String(first)
+                    if !path.isEmpty && path != "/" {
+                        c.projectPath = path
+                    }
+                }
+            }
+            enriched.append(c)
+        }
+        return enriched
+    }
+
+    func stop(id: String) async -> Bool {
+        let result = await ShellExecutor.runAsync("docker stop \(id) 2>/dev/null")
+        return result.exitCode == 0
+    }
+
+    func start(id: String) async -> Bool {
+        let result = await ShellExecutor.runAsync("docker start \(id) 2>/dev/null")
+        return result.exitCode == 0
+    }
+
+    func restart(id: String) async -> Bool {
+        let result = await ShellExecutor.runAsync("docker restart \(id) 2>/dev/null")
+        return result.exitCode == 0
     }
 
     func containerForPort(_ port: UInt16, containers: [DockerContainer]) -> DockerContainer? {

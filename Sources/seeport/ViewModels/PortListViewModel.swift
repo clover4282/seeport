@@ -4,7 +4,7 @@ import AppKit
 import UserNotifications
 
 enum FilterTab: String, CaseIterable {
-    case all = "All"
+    case local = "Local"
     case docker = "Docker"
     case favorites = "Favorites"
 }
@@ -13,7 +13,7 @@ enum FilterTab: String, CaseIterable {
 final class PortListViewModel: ObservableObject {
     @Published var ports: [PortInfo] = []
     @Published var searchText = ""
-    @Published var selectedTab: FilterTab = .all
+    @Published var selectedTab: FilterTab = .local
     @Published var isScanning = false
     @Published var lastScanTime: Date?
     @Published var portCount: Int = 0
@@ -48,8 +48,10 @@ final class PortListViewModel: ObservableObject {
 
         // Tab filter
         switch selectedTab {
-        case .all, .docker:
+        case .docker:
             break
+        case .local:
+            result = result.filter { $0.category != .system && $0.category != .other && $0.dockerContainer == nil }
         case .favorites:
             result = result.filter { $0.isFavorite }
         }
@@ -101,7 +103,10 @@ final class PortListViewModel: ObservableObject {
         async let containers = dockerService.fetchContainers()
 
         var results = await scannedPorts
-        let dockerContainers_ = await containers
+        var dockerContainers_ = await containers
+
+        // Enrich Docker containers with project paths
+        dockerContainers_ = await dockerService.enrichWithProjectPaths(dockerContainers_)
 
         // Enrich with Docker info and categories
         results = results.map { port in
@@ -128,6 +133,19 @@ final class PortListViewModel: ObservableObject {
             return updated
         }
 
+        // Enrich local (non-Docker) ports with working directory
+        for i in results.indices where results[i].dockerContainer == nil && results[i].category != .system {
+            if let path = await ProcessService.getWorkingDirectory(pid: results[i].process.pid) {
+                results[i].projectPath = path
+            }
+        }
+        // Propagate Docker project path to port
+        for i in results.indices {
+            if let containerPath = results[i].dockerContainer?.projectPath {
+                results[i].projectPath = containerPath
+            }
+        }
+
         ports = results.sorted { $0.port < $1.port }
         dockerContainers = dockerContainers_
         portCount = ports.count
@@ -146,13 +164,21 @@ final class PortListViewModel: ObservableObject {
         let activePids = Set(ports.map(\.process.pid))
         processIcons = processIcons.filter { activePids.contains($0.key) }
 
-        // Detect new ports
+        // Detect new and removed ports
         let currentPorts = Set(ports.map(\.port))
         if !isFirstScan {
-            let newPorts = currentPorts.subtracting(knownPorts)
-            for newPort in newPorts {
-                if let info = ports.first(where: { $0.port == newPort }) {
-                    sendNotification(for: info)
+            if settings.notifyNewPort {
+                let newPorts = currentPorts.subtracting(knownPorts)
+                for newPort in newPorts {
+                    if let info = ports.first(where: { $0.port == newPort }) {
+                        sendNotification(for: info)
+                    }
+                }
+            }
+            if settings.notifyRemovedPort {
+                let removedPorts = knownPorts.subtracting(currentPorts)
+                for removedPort in removedPorts {
+                    sendRemovedNotification(port: removedPort)
                 }
             }
         }
@@ -189,6 +215,20 @@ final class PortListViewModel: ObservableObject {
         UNUserNotificationCenter.current().add(request)
     }
 
+    private func sendRemovedNotification(port: UInt16) {
+        let content = UNMutableNotificationContent()
+        content.title = "Port closed"
+        content.body = "Port \(port) is no longer listening"
+        content.sound = .default
+
+        let request = UNNotificationRequest(
+            identifier: "seeport.removedport.\(port)",
+            content: content,
+            trigger: nil
+        )
+        UNUserNotificationCenter.current().add(request)
+    }
+
     private func saveIconAttachment(icon: NSImage, pid: Int32) -> UNNotificationAttachment? {
         let tmpURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("seeport_icon_\(pid).png")
@@ -216,7 +256,8 @@ final class PortListViewModel: ObservableObject {
                 category: .other,
                 address: port.address,
                 isFavorite: port.isFavorite,
-                dockerContainer: port.dockerContainer
+                dockerContainer: port.dockerContainer,
+                projectPath: port.projectPath
             )
         }
     }
@@ -237,13 +278,32 @@ final class PortListViewModel: ObservableObject {
                 category: originalCategory,
                 address: port.address,
                 isFavorite: port.isFavorite,
-                dockerContainer: port.dockerContainer
+                dockerContainer: port.dockerContainer,
+                projectPath: port.projectPath
             )
         }
     }
 
     func hasOverride(_ port: PortInfo) -> Bool {
         CategoryOverrides.categoryFor(port.port) != nil
+    }
+
+    func dockerAction(_ action: String, containerId: String) async {
+        let success: Bool
+        switch action {
+        case "stop":
+            success = await dockerService.stop(id: containerId)
+        case "start":
+            success = await dockerService.start(id: containerId)
+        case "restart":
+            success = await dockerService.restart(id: containerId)
+        default:
+            return
+        }
+        if success {
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            await refresh()
+        }
     }
 
     func killProcess(_ port: PortInfo) async {
@@ -257,7 +317,7 @@ final class PortListViewModel: ObservableObject {
 
     func tabCount(for tab: FilterTab) -> Int {
         switch tab {
-        case .all: return ports.count
+        case .local: return ports.filter { $0.category != .system && $0.category != .other && $0.dockerContainer == nil }.count
         case .docker: return dockerContainers.count
         case .favorites: return ports.filter { $0.isFavorite }.count
         }

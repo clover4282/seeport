@@ -31,6 +31,21 @@ enum ProcessService {
         return NSWorkspace.shared.icon(forFile: "/usr/bin/env")
     }
 
+    static func getWorkingDirectory(pid: Int32) async -> String? {
+        let result = await ShellExecutor.runAsync("lsof -a -d cwd -p \(pid) -F n 2>/dev/null")
+        guard result.exitCode == 0 else { return nil }
+        for line in result.output.split(separator: "\n") {
+            let s = String(line)
+            if s.hasPrefix("n/") {
+                let path = String(s.dropFirst(1))
+                // Skip home directory itself and root
+                if path == "/" || path == NSHomeDirectory() { return nil }
+                return path
+            }
+        }
+        return nil
+    }
+
     static func kill(pid: Int32) async -> Bool {
         let result = await ShellExecutor.runAsync("kill -9 \(pid) 2>/dev/null")
         return result.exitCode == 0
