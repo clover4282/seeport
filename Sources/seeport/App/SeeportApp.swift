@@ -1,5 +1,7 @@
 import SwiftUI
 import AppKit
+import UserNotifications
+import Sparkle
 
 @main
 struct SeeportApp: App {
@@ -13,10 +15,32 @@ struct SeeportApp: App {
     }
 }
 
-final class SeeportDelegate: NSObject, NSApplicationDelegate {
+final class SeeportDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
+    static private(set) var updaterController: SPUStandardUpdaterController!
+
+    static var updater: SPUUpdater {
+        updaterController.updater
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         NSApp.applicationIconImage = Self.makeAppIcon()
+        UNUserNotificationCenter.current().delegate = self
+
+        Self.updaterController = SPUStandardUpdaterController(
+            startingUpdater: true,
+            updaterDelegate: nil,
+            userDriverDelegate: nil
+        )
+    }
+
+    // Show notifications even when app is in foreground
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
     }
 
     private static func makeAppIcon() -> NSImage {

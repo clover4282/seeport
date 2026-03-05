@@ -1,18 +1,29 @@
 import SwiftUI
 import UserNotifications
+import UniformTypeIdentifiers
+import Sparkle
 
 enum SettingsTab: String, CaseIterable {
     case general = "General"
+    case tools = "Tools"
     case display = "Display"
-    case license = "License"
     case about = "About"
 
     var icon: String {
         switch self {
         case .general: return "gearshape"
+        case .tools: return "wrench.and.screwdriver"
         case .display: return "paintbrush"
-        case .license: return "key"
         case .about: return "info.circle"
+        }
+    }
+
+    var iconFilled: String {
+        switch self {
+        case .general: return "gearshape.fill"
+        case .tools: return "wrench.and.screwdriver.fill"
+        case .display: return "paintbrush.fill"
+        case .about: return "info.circle.fill"
         }
     }
 }
@@ -20,275 +31,136 @@ enum SettingsTab: String, CaseIterable {
 struct SettingsView: View {
     @ObservedObject var viewModel: PortListViewModel
     @ObservedObject var settings = SettingsManager.shared
-    @ObservedObject var license = LicenseManager.shared
-    @Binding var isPresented: Bool
     @State private var selectedTab: SettingsTab = .general
     @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
-    @State private var licenseKeyInput = ""
-    @State private var showActivateField = false
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack {
-                Text("Settings")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(Constants.Colors.textPrimary)
-                Spacer()
-                Button(action: { isPresented = false }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 18))
-                        .foregroundColor(Constants.Colors.textSecondary)
-                }
-                .buttonStyle(.plain)
-                .hoverCursor()
-            }
-            .padding(.horizontal, Constants.Spacing.xlarge)
-            .padding(.top, Constants.Spacing.xlarge)
-            .padding(.bottom, Constants.Spacing.large)
-
-            // Tab bar
-            HStack(spacing: 0) {
+            // Toolbar tabs
+            HStack(spacing: 24) {
                 ForEach(SettingsTab.allCases, id: \.self) { tab in
-                    settingsTabButton(tab)
+                    toolbarTab(tab)
                 }
             }
-            .background(Constants.Colors.cardBackground)
-            .cornerRadius(8)
-            .padding(.horizontal, Constants.Spacing.xlarge)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+
+            Divider().background(Color.white.opacity(0.1))
 
             // Content
             ScrollView {
-                VStack(alignment: .leading, spacing: Constants.Spacing.xlarge) {
+                VStack(alignment: .leading, spacing: 20) {
                     switch selectedTab {
-                    case .general:
-                        generalTab
-                    case .display:
-                        displayTab
-                    case .license:
-                        licenseTab
-                    case .about:
-                        aboutTab
+                    case .general: generalTab
+                    case .tools: toolsTab
+                    case .display: displayTab
+                    case .about: aboutTab
                     }
                 }
-                .padding(Constants.Spacing.xlarge)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
             }
-
-            Spacer(minLength: 0)
-
-            // Bottom bar
-            Divider().background(Color.white.opacity(0.1))
-            HStack {
-                Button(action: {
-                    settings.resetToDefaults()
-                    viewModel.applySettings()
-                }) {
-                    Text("Reset to Defaults")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.blue)
-                }
-                .buttonStyle(.plain)
-                .hoverCursor()
-
-                Spacer()
-
-                Button(action: { isPresented = false }) {
-                    Text("Done")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 6)
-                        .background(Color.blue)
-                        .cornerRadius(6)
-                }
-                .buttonStyle(.plain)
-                .hoverCursor()
-            }
-            .padding(.horizontal, Constants.Spacing.xlarge)
-            .padding(.vertical, Constants.Spacing.large)
         }
-        .frame(width: Constants.popoverWidth, height: Constants.popoverHeight)
         .background(Constants.Colors.background)
     }
 
-    private var notificationStatusText: String {
-        switch notificationStatus {
-        case .authorized: return "Enabled"
-        case .denied: return "Disabled"
-        case .provisional: return "Provisional"
-        case .ephemeral: return "Ephemeral"
-        case .notDetermined: return "Not configured"
-        @unknown default: return "Unknown"
-        }
-    }
+    // MARK: - Toolbar Tab
 
-    private func checkNotificationStatus() {
-        UNUserNotificationCenter.current().getNotificationSettings { settings in
-            DispatchQueue.main.async {
-                notificationStatus = settings.authorizationStatus
+    private func toolbarTab(_ tab: SettingsTab) -> some View {
+        Button(action: { selectedTab = tab }) {
+            VStack(spacing: 4) {
+                Image(systemName: selectedTab == tab ? tab.iconFilled : tab.icon)
+                    .font(.system(size: 18))
+                    .frame(width: 28, height: 28)
+                Text(tab.rawValue)
+                    .font(.system(size: 10, weight: selectedTab == tab ? .semibold : .regular))
             }
+            .foregroundColor(selectedTab == tab ? .blue : Constants.Colors.textSecondary)
+            .frame(width: 60, height: 50)
+            .contentShape(Rectangle())
         }
-    }
-
-    // MARK: - Tab Button
-
-    private func settingsTabButton(_ tab: SettingsTab) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: tab.icon)
-                .font(.system(size: 10))
-            Text(tab.rawValue)
-                .font(.system(size: 11, weight: selectedTab == tab ? .semibold : .regular))
-        }
-        .foregroundColor(selectedTab == tab ? .white : Constants.Colors.textSecondary)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-        .background(selectedTab == tab ? Color.blue.opacity(0.4) : Color.clear)
-        .cornerRadius(6)
-        .contentShape(Rectangle())
-        .onTapGesture { selectedTab = tab }
+        .buttonStyle(.plain)
         .hoverCursor()
     }
 
     // MARK: - General Tab
 
     private var generalTab: some View {
-        VStack(alignment: .leading, spacing: Constants.Spacing.xlarge) {
-            // Scan section
-            settingsSection("Scan") {
-                settingsToggleRow(
-                    icon: "arrow.clockwise",
-                    title: "Auto-refresh",
-                    subtitle: "Automatically scan ports at regular intervals",
-                    isOn: $settings.autoRefreshEnabled
-                )
+        VStack(alignment: .leading, spacing: 20) {
+            // Scan
+            flatSection("Scan") {
+                flatToggleRow("Auto-refresh", isOn: $settings.autoRefreshEnabled)
 
                 if settings.autoRefreshEnabled {
-                    Divider().background(Color.white.opacity(0.06))
-
-                    VStack(alignment: .leading, spacing: Constants.Spacing.medium) {
+                    flatDivider
+                    VStack(alignment: .leading, spacing: 8) {
                         Text("Refresh interval")
-                            .font(.system(size: 12))
+                            .font(.system(size: 13))
                             .foregroundColor(Constants.Colors.textSecondary)
-                            .padding(.horizontal, Constants.Spacing.large)
-
-                        HStack(spacing: Constants.Spacing.medium) {
+                        HStack(spacing: 8) {
                             ForEach([3.0, 5.0, 10.0, 30.0], id: \.self) { interval in
                                 intervalButton(interval)
                             }
                         }
-                        .padding(.horizontal, Constants.Spacing.large)
                     }
-                    .padding(.vertical, Constants.Spacing.medium)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
                 }
             }
 
-            // External Tools
-            settingsSection("External Tools") {
-                VStack(alignment: .leading, spacing: 0) {
-                    settingsPickerRow(
-                        title: "External Editor",
-                        selection: $settings.externalEditor,
-                        allCases: ExternalEditor.allCases
-                    )
+            // Notifications
+            flatSection("Notifications") {
+                flatToggleRow("New port detected", isOn: $settings.notifyNewPort)
+                flatDivider
+                flatToggleRow("Port closed", isOn: $settings.notifyRemovedPort)
+                flatDivider
 
-                    Divider().background(Color.white.opacity(0.06))
-
-                    settingsPickerRow(
-                        title: "Shell",
-                        selection: $settings.shellApp,
-                        allCases: ShellApp.allCases
-                    )
-                }
-            }
-
-            // Notifications section
-            settingsSection("Notifications") {
-                HStack(spacing: Constants.Spacing.large) {
-                    Image(systemName: notificationStatus == .authorized ? "bell.badge" : "bell.slash")
-                        .font(.system(size: 14))
-                        .foregroundColor(notificationStatus == .authorized ? .green : .orange)
-                        .frame(width: 20)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Notification status")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(Constants.Colors.textPrimary)
-                        Text(notificationStatusText)
-                            .font(.system(size: 10))
-                            .foregroundColor(notificationStatus == .authorized ? .green : .orange)
-                    }
-
+                HStack {
+                    Text("Status")
+                        .font(.system(size: 13))
+                        .foregroundColor(Constants.Colors.textPrimary)
                     Spacer()
+                    Text(notificationStatusText)
+                        .font(.system(size: 12))
+                        .foregroundColor(notificationStatus == .authorized ? .green : .orange)
                 }
-                .padding(.horizontal, Constants.Spacing.large)
+                .padding(.horizontal, 16)
                 .padding(.vertical, 10)
 
-                Divider().background(Color.white.opacity(0.06))
-
-                settingsToggleRow(
-                    icon: "plus.circle",
-                    title: "New port detected",
-                    subtitle: "Notify when a new port starts listening",
-                    isOn: $settings.notifyNewPort
-                )
-
-                Divider().background(Color.white.opacity(0.06))
-
-                settingsToggleRow(
-                    icon: "minus.circle",
-                    title: "Port closed",
-                    subtitle: "Notify when a port stops listening",
-                    isOn: $settings.notifyRemovedPort
-                )
-
-                Divider().background(Color.white.opacity(0.06))
+                flatDivider
 
                 Button(action: {
                     if let url = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") {
                         NSWorkspace.shared.open(url)
                     }
                 }) {
-                    HStack(spacing: Constants.Spacing.large) {
-                        Image(systemName: "gearshape")
-                            .font(.system(size: 14))
-                            .foregroundColor(.blue)
-                            .frame(width: 20)
-
+                    HStack {
                         Text("Open System Settings")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(Constants.Colors.textPrimary)
-
-                        Spacer()
-
-                        Image(systemName: "arrow.up.forward.square")
                             .font(.system(size: 13))
+                            .foregroundColor(Constants.Colors.textPrimary)
+                        Spacer()
+                        Image(systemName: "arrow.up.forward.square")
+                            .font(.system(size: 12))
                             .foregroundColor(Constants.Colors.textSecondary)
                     }
-                    .padding(.horizontal, Constants.Spacing.large)
+                    .padding(.horizontal, 16)
                     .padding(.vertical, 10)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .hoverCursor()
             }
 
-            // Quit
-            settingsSection("App") {
-                Button(action: {
-                    NSApplication.shared.terminate(nil)
-                }) {
-                    HStack(spacing: Constants.Spacing.large) {
-                        Image(systemName: "power")
-                            .font(.system(size: 14))
-                            .foregroundColor(.red)
-                            .frame(width: 20)
-
+            // App
+            flatSection("App") {
+                Button(action: { NSApplication.shared.terminate(nil) }) {
+                    HStack {
                         Text("Quit Seeport")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.system(size: 13))
                             .foregroundColor(.red)
-
                         Spacer()
                     }
-                    .padding(.horizontal, Constants.Spacing.large)
+                    .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .contentShape(Rectangle())
                 }
@@ -301,319 +173,225 @@ struct SettingsView: View {
         .onChange(of: settings.refreshInterval) { _ in viewModel.applySettings() }
     }
 
-    // MARK: - Display Tab
+    // MARK: - Tools Tab
 
-    private var displayTab: some View {
-        VStack(alignment: .leading, spacing: Constants.Spacing.xlarge) {
-            settingsSection("Appearance") {
-                settingsToggleRow(
-                    icon: "app.dashed",
-                    title: "Process icons",
-                    subtitle: "Show application icons next to port entries",
-                    isOn: $settings.showProcessIcons
-                )
+    private var toolsTab: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            // External Editor
+            VStack(alignment: .leading, spacing: 10) {
+                Text("External Editor")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(Constants.Colors.textPrimary)
+
+                VStack(spacing: 0) {
+                    toolPickerRow(selection: $settings.externalEditor, allCases: ExternalEditor.allCases)
+
+                    if settings.externalEditor == .custom {
+                        flatDivider
+                        customToolConfig(
+                            path: $settings.customEditorPath,
+                            args: $settings.customEditorArgs,
+                            pathPlaceholder: "Path to application"
+                        )
+                    }
+                }
+                .background(Constants.Colors.cardBackground)
+                .cornerRadius(10)
             }
 
-            settingsSection("Keyboard Shortcuts") {
+            // Shell
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Shell")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(Constants.Colors.textPrimary)
+
                 VStack(spacing: 0) {
-                    shortcutRow("Refresh", shortcut: "\u{2318}R")
-                    Divider().background(Color.white.opacity(0.06))
-                    shortcutRow("Search", shortcut: "\u{2318}F")
-                    Divider().background(Color.white.opacity(0.06))
-                    shortcutRow("Quit", shortcut: "\u{2318}Q")
+                    toolPickerRow(selection: $settings.shellApp, allCases: ShellApp.allCases)
+
+                    if settings.shellApp == .custom {
+                        flatDivider
+                        customToolConfig(
+                            path: $settings.customShellPath,
+                            args: $settings.customShellArgs,
+                            pathPlaceholder: "Path to executable"
+                        )
+                    }
                 }
+                .background(Constants.Colors.cardBackground)
+                .cornerRadius(10)
+            }
+        }
+        .onChange(of: settings.externalEditor) { newValue in
+            if newValue == .custom && settings.customEditorPath.isEmpty {
+                showAppPicker { url in settings.customEditorPath = url.path }
+            }
+        }
+        .onChange(of: settings.shellApp) { newValue in
+            if newValue == .custom && settings.customShellPath.isEmpty {
+                showAppPicker { url in settings.customShellPath = url.path }
             }
         }
     }
 
-    // MARK: - License Tab
+    private func toolPickerRow<T: RawRepresentable & Hashable>(
+        selection: Binding<T>, allCases: [T]
+    ) -> some View where T.RawValue == String {
+        Picker("", selection: selection) {
+            ForEach(allCases, id: \.self) { item in
+                Text(item.rawValue).tag(item)
+            }
+        }
+        .pickerStyle(.menu)
+        .labelsHidden()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(Color.white.opacity(0.06))
+        .cornerRadius(6)
+    }
 
-    private var licenseTab: some View {
-        VStack(alignment: .leading, spacing: Constants.Spacing.xlarge) {
-            // Status card
-            licenseStatusCard
+    private let fieldHeight: CGFloat = 32
+    private let fieldCorner: CGFloat = 6
+    private let fieldBg = Color.white.opacity(0.06)
 
-            // Actions
-            switch license.status {
-            case .trial, .expired:
-                // Activate license
-                settingsSection("Activate License") {
-                    if showActivateField {
-                        VStack(spacing: Constants.Spacing.medium) {
-                            HStack(spacing: Constants.Spacing.medium) {
-                                TextField("Enter license key", text: $licenseKeyInput)
-                                    .textFieldStyle(.plain)
-                                    .font(.system(size: 12, design: .monospaced))
-                                    .foregroundColor(Constants.Colors.textPrimary)
-                                    .padding(8)
-                                    .background(Constants.Colors.searchBackground)
-                                    .cornerRadius(6)
-                                    .onHover { hovering in
-                                        if hovering { NSCursor.iBeam.push() }
-                                        else { NSCursor.pop() }
-                                    }
+    private func customToolConfig(path: Binding<String>, args: Binding<String>, pathPlaceholder: String) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            // Path
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Path")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(Constants.Colors.textSecondary)
+                HStack(spacing: 8) {
+                    TextField(pathPlaceholder, text: path)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundColor(Constants.Colors.textPrimary)
+                        .padding(.horizontal, 10)
+                        .frame(height: fieldHeight)
+                        .background(fieldBg)
+                        .cornerRadius(fieldCorner)
+                        .onHover { h in if h { NSCursor.iBeam.push() } else { NSCursor.pop() } }
 
-                                Button(action: {
-                                    Task {
-                                        await license.activate(key: licenseKeyInput)
-                                        if case .active = license.status {
-                                            licenseKeyInput = ""
-                                            showActivateField = false
-                                        }
-                                    }
-                                }) {
-                                    HStack(spacing: 4) {
-                                        if license.isActivating {
-                                            ProgressView()
-                                                .scaleEffect(0.6)
-                                                .frame(width: 12, height: 12)
-                                        }
-                                        Text(license.isActivating ? "Verifying..." : "Activate")
-                                            .font(.system(size: 11, weight: .semibold))
-                                    }
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 7)
-                                    .background(license.isActivating ? Color.gray : Color.blue)
-                                    .cornerRadius(6)
-                                }
-                                .buttonStyle(.plain)
-                                .hoverCursor()
-                                .disabled(license.isActivating)
-                            }
-
-                            if let error = license.activationError {
-                                Text(error)
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.red)
-                            }
-                        }
-                        .padding(Constants.Spacing.large)
-                    } else {
-                        Button(action: { showActivateField = true }) {
-                            HStack(spacing: Constants.Spacing.large) {
-                                Image(systemName: "key")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.blue)
-                                    .frame(width: 20)
-
-                                Text("Enter License Key")
-                                    .font(.system(size: 13, weight: .medium))
-                                    .foregroundColor(Constants.Colors.textPrimary)
-
-                                Spacer()
-
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(Constants.Colors.textSecondary)
-                            }
-                            .padding(.horizontal, Constants.Spacing.large)
-                            .padding(.vertical, 10)
-                        }
-                        .buttonStyle(.plain)
-                        .hoverCursor()
-                    }
-                }
-
-                // Purchase via Paddle
-                purchaseSection
-
-            case .active:
-                settingsSection("Manage") {
-                    Button(action: { license.deactivate() }) {
-                        HStack(spacing: Constants.Spacing.large) {
-                            Image(systemName: "trash")
-                                .font(.system(size: 14))
-                                .foregroundColor(.orange)
-                                .frame(width: 20)
-
-                            Text("Reset License")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundColor(Constants.Colors.textPrimary)
-
-                            Spacer()
-                        }
-                        .padding(.horizontal, Constants.Spacing.large)
-                        .padding(.vertical, 10)
+                    Button(action: {
+                        showAppPicker { url in path.wrappedValue = url.path }
+                    }) {
+                        Text("Choose...")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(Constants.Colors.textPrimary)
+                            .padding(.horizontal, 14)
+                            .frame(height: fieldHeight)
+                            .background(Color.white.opacity(0.1))
+                            .cornerRadius(fieldCorner)
                     }
                     .buttonStyle(.plain)
                     .hoverCursor()
                 }
             }
 
-            // About licensing
-            VStack(alignment: .leading, spacing: Constants.Spacing.small) {
-                Text("About Licensing")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(Constants.Colors.textPrimary)
-                Text("seeport offers a 30-day free trial. After that, a one-time purchase via Paddle grants you a perpetual license with lifetime updates. Your license is tied to this device.")
-                    .font(.system(size: 10))
+            // Arguments
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Arguments")
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(Constants.Colors.textSecondary)
-                    .lineSpacing(2)
+                TextField("%TARGET_PATH%", text: args)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundColor(Constants.Colors.textPrimary)
+                    .padding(.horizontal, 10)
+                    .frame(height: fieldHeight)
+                    .background(fieldBg)
+                    .cornerRadius(fieldCorner)
+                    .onHover { h in if h { NSCursor.iBeam.push() } else { NSCursor.pop() } }
             }
-            .padding(.top, Constants.Spacing.small)
         }
+        .padding(16)
     }
 
-    private var purchaseSection: some View {
-        settingsSection("Purchase") {
-            Button(action: {
-                if let url = URL(string: PaddleConfig.checkoutURL) {
-                    NSWorkspace.shared.open(url)
-                }
-            }) {
-                HStack(spacing: Constants.Spacing.large) {
-                    Image(systemName: "cart")
-                        .font(.system(size: 14))
-                        .foregroundColor(.blue)
-                        .frame(width: 20)
+    // MARK: - Display Tab
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Purchase a License")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(Constants.Colors.textPrimary)
-                        Text("One-time purchase, lifetime updates via Paddle")
-                            .font(.system(size: 10))
-                            .foregroundColor(Constants.Colors.textSecondary)
-                    }
-
-                    Spacer()
-
-                    Image(systemName: "arrow.up.forward.square")
-                        .font(.system(size: 13))
-                        .foregroundColor(Constants.Colors.textSecondary)
-                }
-                .padding(.horizontal, Constants.Spacing.large)
-                .padding(.vertical, 10)
-            }
-            .buttonStyle(.plain)
-            .hoverCursor()
-        }
-    }
-
-    private var licenseStatusCard: some View {
-        HStack(spacing: Constants.Spacing.large) {
-            // Status icon
-            Group {
-                switch license.status {
-                case .active:
-                    Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: 32))
-                        .foregroundColor(.green)
-                case .trial:
-                    Image(systemName: "clock.fill")
-                        .font(.system(size: 32))
-                        .foregroundColor(.blue)
-                case .expired:
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 32))
-                        .foregroundColor(.red)
-                }
+    private var displayTab: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            flatSection("Appearance") {
+                flatToggleRow("Process icons", isOn: $settings.showProcessIcons)
             }
 
-            VStack(alignment: .leading, spacing: 4) {
-                switch license.status {
-                case .active:
-                    Text("License Active")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(Constants.Colors.textPrimary)
-                    Text(license.maskedKey)
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundColor(Constants.Colors.textSecondary)
-                case .trial(let days):
-                    Text("Free Trial")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(Constants.Colors.textPrimary)
-                    Text("\(days) days remaining")
-                        .font(.system(size: 11))
-                        .foregroundColor(.blue)
-                case .expired:
-                    Text("Trial Expired")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(Constants.Colors.textPrimary)
-                    Text("Please purchase a license to continue")
-                        .font(.system(size: 11))
-                        .foregroundColor(.red)
-                }
+            flatSection("Keyboard Shortcuts") {
+                shortcutRow("Refresh", shortcut: "\u{2318}R")
+                flatDivider
+                shortcutRow("Search", shortcut: "\u{2318}F")
+                flatDivider
+                shortcutRow("Quit", shortcut: "\u{2318}Q")
             }
-
-            Spacer()
-        }
-        .padding(Constants.Spacing.large)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Constants.Colors.cardBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(statusBorderColor.opacity(0.3), lineWidth: 1)
-                )
-        )
-    }
-
-    private var statusBorderColor: Color {
-        switch license.status {
-        case .active: return .green
-        case .trial: return .blue
-        case .expired: return .red
         }
     }
 
     // MARK: - About Tab
 
+    private var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+    }
+
     private var aboutTab: some View {
-        VStack(spacing: Constants.Spacing.xlarge) {
-            // App info
-            VStack(spacing: Constants.Spacing.medium) {
+        VStack(spacing: 20) {
+            VStack(spacing: 8) {
                 Image(systemName: "network")
-                    .font(.system(size: 40))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.blue, .cyan],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .font(.system(size: 36))
+                    .foregroundStyle(LinearGradient(colors: [.blue, .cyan], startPoint: .topLeading, endPoint: .bottomTrailing))
 
                 HStack(spacing: 0) {
-                    Text("see")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.white)
-                    Text("port")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.blue)
+                    Text("see").font(.system(size: 18, weight: .bold)).foregroundColor(.white)
+                    Text("port").font(.system(size: 18, weight: .bold)).foregroundColor(.blue)
                 }
 
-                Text("v1.0.0")
-                    .font(.system(size: 12))
-                    .foregroundColor(Constants.Colors.textSecondary)
+                Text("v\(appVersion)").font(.system(size: 11)).foregroundColor(Constants.Colors.textSecondary)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, Constants.Spacing.xlarge)
+            .padding(.vertical, 16)
 
-            settingsSection("Info") {
-                aboutRow("Developer", value: "clover")
-                Divider().background(Color.white.opacity(0.06))
-                aboutRow("Platform", value: "macOS 13+")
-                Divider().background(Color.white.opacity(0.06))
-                aboutRow("Framework", value: "SwiftUI")
+            flatSection("Info") {
+                flatInfoRow("Developer", value: "clover")
+                flatDivider
+                flatInfoRow("Platform", value: "macOS 13+")
+                flatDivider
+                flatInfoRow("Framework", value: "SwiftUI")
             }
 
-            settingsSection("Data") {
-                aboutRow("Favorites", value: "\(Favorites.load().count) ports")
-                Divider().background(Color.white.opacity(0.06))
-                aboutRow("Overrides", value: "\(CategoryOverrides.load().count) ports")
+            flatSection("Data") {
+                flatInfoRow("Favorites", value: "\(Favorites.load().count) ports")
+                flatDivider
+                flatInfoRow("Overrides", value: "\(CategoryOverrides.load().count) ports")
+            }
+
+            flatSection("Updates") {
+                Button(action: {
+                    SeeportDelegate.updater.checkForUpdates()
+                }) {
+                    HStack {
+                        Text("Check for Updates")
+                            .font(.system(size: 13))
+                            .foregroundColor(Constants.Colors.textPrimary)
+                        Spacer()
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 12))
+                            .foregroundColor(Constants.Colors.textSecondary)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .hoverCursor()
             }
         }
     }
 
-    // MARK: - Reusable Components
+    // MARK: - Flat Design Components
 
-    private func settingsSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: Constants.Spacing.medium) {
+    private func flatSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(Constants.Colors.textSecondary)
-                .textCase(.uppercase)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(Constants.Colors.textPrimary)
 
             VStack(spacing: 0) {
                 content()
@@ -623,32 +401,61 @@ struct SettingsView: View {
         }
     }
 
-    private func settingsToggleRow(icon: String, title: String, subtitle: String, isOn: Binding<Bool>) -> some View {
-        HStack(spacing: Constants.Spacing.large) {
-            Image(systemName: icon)
-                .font(.system(size: 14))
-                .foregroundColor(.blue)
-                .frame(width: 20)
+    private var flatDivider: some View {
+        Divider()
+            .background(Color.white.opacity(0.08))
+            .padding(.leading, 16)
+    }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Constants.Colors.textPrimary)
-                Text(subtitle)
-                    .font(.system(size: 10))
-                    .foregroundColor(Constants.Colors.textSecondary)
-                    .lineLimit(1)
-            }
-
+    private func flatToggleRow(_ title: String, isOn: Binding<Bool>) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 13))
+                .foregroundColor(Constants.Colors.textPrimary)
             Spacer()
-
             Toggle("", isOn: isOn)
                 .toggleStyle(.switch)
                 .scaleEffect(0.8)
                 .frame(width: 40)
         }
-        .padding(.horizontal, Constants.Spacing.large)
+        .padding(.horizontal, 16)
         .padding(.vertical, 10)
+    }
+
+    private func flatInfoRow(_ label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 13))
+                .foregroundColor(Constants.Colors.textPrimary)
+            Spacer()
+            Text(value)
+                .font(.system(size: 12))
+                .foregroundColor(Constants.Colors.textSecondary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+
+    private func flatPickerRow<T: RawRepresentable & Hashable>(
+        _ title: String,
+        selection: Binding<T>,
+        allCases: [T]
+    ) -> some View where T.RawValue == String {
+        HStack {
+            Text(title)
+                .font(.system(size: 13))
+                .foregroundColor(Constants.Colors.textPrimary)
+            Spacer()
+            Picker("", selection: selection) {
+                ForEach(allCases, id: \.self) { item in
+                    Text(item.rawValue).tag(item)
+                }
+            }
+            .labelsHidden()
+            .frame(width: 180)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
     }
 
     private func intervalButton(_ interval: TimeInterval) -> some View {
@@ -658,11 +465,7 @@ struct SettingsView: View {
                 .foregroundColor(settings.refreshInterval == interval ? .white : Constants.Colors.textSecondary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 6)
-                .background(
-                    settings.refreshInterval == interval
-                        ? Color.blue.opacity(0.5)
-                        : Color.white.opacity(0.06)
-                )
+                .background(settings.refreshInterval == interval ? Color.blue.opacity(0.5) : Color.white.opacity(0.06))
                 .cornerRadius(6)
         }
         .buttonStyle(.plain)
@@ -683,43 +486,69 @@ struct SettingsView: View {
                 .background(Color.white.opacity(0.08))
                 .cornerRadius(4)
         }
-        .padding(.horizontal, Constants.Spacing.large)
-        .padding(.vertical, 8)
-    }
-
-    private func settingsPickerRow<T: RawRepresentable & Hashable>(
-        title: String,
-        selection: Binding<T>,
-        allCases: [T]
-    ) -> some View where T.RawValue == String {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(Constants.Colors.textPrimary)
-
-            Picker("", selection: selection) {
-                ForEach(allCases, id: \.self) { item in
-                    Text(item.rawValue).tag(item)
-                }
-            }
-            .labelsHidden()
-            .frame(maxWidth: .infinity)
-        }
-        .padding(.horizontal, Constants.Spacing.large)
+        .padding(.horizontal, 16)
         .padding(.vertical, 10)
     }
 
-    private func aboutRow(_ label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(.system(size: 13))
-                .foregroundColor(Constants.Colors.textPrimary)
-            Spacer()
-            Text(value)
-                .font(.system(size: 12))
-                .foregroundColor(Constants.Colors.textSecondary)
+    // MARK: - Helpers
+
+    private var notificationStatusText: String {
+        switch notificationStatus {
+        case .authorized: return "Enabled"
+        case .denied: return "Disabled"
+        case .provisional: return "Provisional"
+        case .ephemeral: return "Ephemeral"
+        case .notDetermined: return "Not configured"
+        @unknown default: return "Unknown"
         }
-        .padding(.horizontal, Constants.Spacing.large)
-        .padding(.vertical, 8)
+    }
+
+    private func checkNotificationStatus() {
+        UNUserNotificationCenter.current().getNotificationSettings { s in
+            DispatchQueue.main.async { notificationStatus = s.authorizationStatus }
+        }
+    }
+
+    private func showAppPicker(onSelect: @escaping (URL) -> Void) {
+        let panel = NSOpenPanel()
+        panel.title = "Select Application"
+        panel.allowedContentTypes = [.application]
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        if panel.runModal() == .OK, let url = panel.url { onSelect(url) }
+    }
+
+    private func appSelectRow(appPath: String, onSelect: @escaping (URL) -> Void) -> some View {
+        let appName = appPath.isEmpty ? "Select App..." : URL(fileURLWithPath: appPath).deletingPathExtension().lastPathComponent
+        let appIcon: NSImage? = appPath.isEmpty ? nil : NSWorkspace.shared.icon(forFile: appPath)
+
+        return Button(action: { showAppPicker(onSelect: onSelect) }) {
+            HStack(spacing: 10) {
+                if let icon = appIcon {
+                    Image(nsImage: icon).resizable().frame(width: 20, height: 20).cornerRadius(4)
+                } else {
+                    Image(systemName: "app.dashed").font(.system(size: 14)).foregroundColor(Constants.Colors.textSecondary).frame(width: 20, height: 20)
+                }
+
+                Text(appName)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(appPath.isEmpty ? Constants.Colors.textSecondary : Constants.Colors.textPrimary)
+
+                Spacer()
+
+                Text("Change")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(.blue)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.blue.opacity(0.12))
+                    .cornerRadius(4)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+        }
+        .buttonStyle(.plain)
+        .hoverCursor()
     }
 }
