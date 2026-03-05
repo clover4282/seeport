@@ -6,6 +6,31 @@
         <description>Most recent updates for Seeport</description>
         <language>en</language>
         <item>
+            <title>Version 1.1</title>
+            <sparkle:version>1.1</sparkle:version>
+            <sparkle:shortVersionString>1.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <ul>
+                    <li>Fix Docker detection in release builds</li>
+                    <li>Fix editor launch (VS Code etc.) in GUI context</li>
+                    <li>iTerm opens in new window instead of tab</li>
+                    <li>Smarter notification messages with process name and category</li>
+                    <li>Show localhost:port on browser button</li>
+                    <li>Favorite toggle moved to star icon in card header</li>
+                    <li>Direct link to Seeport notification settings</li>
+                    <li>Fix port number comma formatting</li>
+                </ul>
+            ]]></description>
+            <pubDate>Wed, 05 Mar 2026 18:00:00 +0000</pubDate>
+            <enclosure
+                url="https://github.com/clover4282/seeport/releases/download/v1.1/seeport-v1.1.zip"
+                type="application/octet-stream"
+                sparkle:edSignature="t8MYocc1rC31yV+r7YJjr0fmVkSMXp2xBc+qv0Gmahgm9hUcv2IQizbRtZTypbL5nl20fy+G0NR8vFFhyU+iCQ=="
+                length="5944598"
+            />
+        </item>
+        <item>
             <title>Version 1.0</title>
             <sparkle:version>1.0</sparkle:version>
             <sparkle:shortVersionString>1.0</sparkle:shortVersionString>
