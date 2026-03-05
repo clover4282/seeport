@@ -27,6 +27,7 @@ final class PortListViewModel: ObservableObject {
     private var timer: Timer?
     private var knownPorts: Set<UInt16> = []
     private var isFirstScan = true
+    private var workingDirCache: [Int32: String?] = [:]
 
     var autoRefreshEnabled: Bool { settings.autoRefreshEnabled }
     var autoRefreshInterval: TimeInterval { settings.refreshInterval }
@@ -100,8 +101,7 @@ final class PortListViewModel: ObservableObject {
         isScanning = true
 
         async let scannedPorts = portScanner.scan()
-        await dockerService.checkAvailability()
-        async let containers = dockerService.fetchContainers()
+        async let containers = dockerService.fetchContainersIfAvailable()
 
         var results = await scannedPorts
         var dockerContainers_ = await containers
@@ -134,9 +134,16 @@ final class PortListViewModel: ObservableObject {
             return updated
         }
 
-        // Enrich local (non-Docker) ports with working directory
+        // Enrich local (non-Docker) ports with working directory (cached)
+        let activePidsSet = Set(results.map(\.process.pid))
+        workingDirCache = workingDirCache.filter { activePidsSet.contains($0.key) }
         for i in results.indices where results[i].dockerContainer == nil && results[i].category != .system {
-            if let path = await ProcessService.getWorkingDirectory(pid: results[i].process.pid) {
+            let pid = results[i].process.pid
+            if let cached = workingDirCache[pid] {
+                results[i].projectPath = cached
+            } else {
+                let path = await ProcessService.getWorkingDirectory(pid: pid)
+                workingDirCache[pid] = path
                 results[i].projectPath = path
             }
         }
@@ -162,8 +169,7 @@ final class PortListViewModel: ObservableObject {
             }
         }
         // Remove stale icons
-        let activePids = Set(ports.map(\.process.pid))
-        processIcons = processIcons.filter { activePids.contains($0.key) }
+        processIcons = processIcons.filter { activePidsSet.contains($0.key) }
 
         // Detect new and removed ports
         let currentPorts = Set(ports.map(\.port))

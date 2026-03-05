@@ -3,6 +3,8 @@ import Foundation
 actor DockerService {
     private(set) var isAvailable = false
     private var dockerPath = "docker"
+    private var lastAvailabilityCheck: Date?
+    private let availabilityCacheSeconds: TimeInterval = 30
 
     private static let dockerSearchPaths = [
         "/usr/local/bin/docker",
@@ -11,6 +13,18 @@ actor DockerService {
         "/Applications/Docker.app/Contents/Resources/bin/docker",
         "/Applications/OrbStack.app/Contents/MacOS/xbin/docker",
     ]
+
+    /// Fetch containers, checking availability only if cache expired.
+    func fetchContainersIfAvailable() async -> [DockerContainer] {
+        let now = Date()
+        if let last = lastAvailabilityCheck, now.timeIntervalSince(last) < availabilityCacheSeconds {
+            // Use cached availability
+        } else {
+            await checkAvailability()
+            lastAvailabilityCheck = now
+        }
+        return await fetchContainers()
+    }
 
     func checkAvailability() async {
         // GUI apps launched via launchd have a minimal PATH that excludes

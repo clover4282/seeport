@@ -98,7 +98,7 @@ struct SettingsView: View {
                             .font(.system(size: 13))
                             .foregroundColor(Constants.Colors.textSecondary)
                         HStack(spacing: 8) {
-                            ForEach([3.0, 5.0, 10.0, 30.0], id: \.self) { interval in
+                            ForEach([5.0, 10.0, 20.0, 30.0], id: \.self) { interval in
                                 intervalButton(interval)
                             }
                         }
