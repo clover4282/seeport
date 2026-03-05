@@ -27,5 +27,8 @@ xcuserdata/
 .vscode/
 .idea/
 
+# Release artifacts
+*.zip
+
 # OMC
 .omc/

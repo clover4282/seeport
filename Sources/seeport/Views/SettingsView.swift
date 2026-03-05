@@ -6,14 +6,12 @@ import Sparkle
 enum SettingsTab: String, CaseIterable {
     case general = "General"
     case tools = "Tools"
-    case display = "Display"
     case about = "About"
 
     var icon: String {
         switch self {
         case .general: return "gearshape"
         case .tools: return "wrench.and.screwdriver"
-        case .display: return "paintbrush"
         case .about: return "info.circle"
         }
     }
@@ -22,7 +20,6 @@ enum SettingsTab: String, CaseIterable {
         switch self {
         case .general: return "gearshape.fill"
         case .tools: return "wrench.and.screwdriver.fill"
-        case .display: return "paintbrush.fill"
         case .about: return "info.circle.fill"
         }
     }
@@ -33,6 +30,7 @@ struct SettingsView: View {
     @ObservedObject var settings = SettingsManager.shared
     @State private var selectedTab: SettingsTab = .general
     @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
+    @State private var showBugReport = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -53,7 +51,6 @@ struct SettingsView: View {
                     switch selectedTab {
                     case .general: generalTab
                     case .tools: toolsTab
-                    case .display: displayTab
                     case .about: aboutTab
                     }
                 }
@@ -62,6 +59,9 @@ struct SettingsView: View {
             }
         }
         .background(Constants.Colors.background)
+        .sheet(isPresented: $showBugReport) {
+            BugReportView()
+        }
     }
 
     // MARK: - Toolbar Tab
@@ -307,24 +307,6 @@ struct SettingsView: View {
         .padding(16)
     }
 
-    // MARK: - Display Tab
-
-    private var displayTab: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            flatSection("Appearance") {
-                flatToggleRow("Process icons", isOn: $settings.showProcessIcons)
-            }
-
-            flatSection("Keyboard Shortcuts") {
-                shortcutRow("Refresh", shortcut: "\u{2318}R")
-                flatDivider
-                shortcutRow("Search", shortcut: "\u{2318}F")
-                flatDivider
-                shortcutRow("Quit", shortcut: "\u{2318}Q")
-            }
-        }
-    }
-
     // MARK: - About Tab
 
     private var appVersion: String {
@@ -359,24 +341,51 @@ struct SettingsView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
 
-            flatSection("Info") {
-                flatInfoRow("Developer", value: "clover")
-                flatDivider
-                flatInfoRow("Platform", value: "macOS 13+")
-                flatDivider
-                flatInfoRow("Framework", value: "SwiftUI")
-            }
+            flatSection("Links") {
+                Button(action: {
+                    if let url = URL(string: "https://github.com/clover4282/seeport") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }) {
+                    HStack {
+                        Text("GitHub")
+                            .font(.system(size: 13))
+                            .foregroundColor(Constants.Colors.textPrimary)
+                        Spacer()
+                        Image(systemName: "arrow.up.forward.square")
+                            .font(.system(size: 12))
+                            .foregroundColor(Constants.Colors.textSecondary)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .hoverCursor()
 
-            flatSection("Data") {
-                flatInfoRow("Favorites", value: "\(Favorites.load().count) ports")
                 flatDivider
-                flatInfoRow("Overrides", value: "\(CategoryOverrides.load().count) ports")
+
+                Button(action: { showBugReport = true }) {
+                    HStack {
+                        Text("Report a Bug")
+                            .font(.system(size: 13))
+                            .foregroundColor(Constants.Colors.textPrimary)
+                        Spacer()
+                        Image(systemName: "ladybug")
+                            .font(.system(size: 12))
+                            .foregroundColor(Constants.Colors.textSecondary)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .hoverCursor()
             }
 
             flatSection("Support") {
                 Button(action: {
-                    // TODO: Buy Me a Coffee 계정 생성 후 URL 변경
-                    if let url = URL(string: "https://buymeacoffee.com/your-username") {
+                    if let url = URL(string: "https://buymeacoffee.com/clover4282") {
                         NSWorkspace.shared.open(url)
                     }
                 }) {
@@ -385,8 +394,8 @@ struct SettingsView: View {
                             .font(.system(size: 13))
                             .foregroundColor(Constants.Colors.textPrimary)
                         Spacer()
-                        Text("☕")
-                            .font(.system(size: 14))
+                        BuyMeACoffeeLogo()
+                            .frame(width: 16, height: 16)
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)

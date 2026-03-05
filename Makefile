@@ -17,6 +17,7 @@ bundle: build
 	@mkdir -p $(APP_DIR)/MacOS $(APP_DIR)/Resources $(APP_DIR)/Frameworks
 	@cp $(EXECUTABLE) $(APP_DIR)/MacOS/$(APP_NAME)
 	@cp Sources/$(APP_NAME)/Resources/Info.plist $(APP_DIR)/Info.plist
+	@cp Sources/$(APP_NAME)/Resources/AppIcon.icns $(APP_DIR)/Resources/AppIcon.icns 2>/dev/null || true
 	@if [ -n "$(SPARKLE_FW)" ]; then \
 		cp -R $(SPARKLE_FW) $(APP_DIR)/Frameworks/; \
 		echo "Sparkle.framework copied"; \

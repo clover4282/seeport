@@ -5,14 +5,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build & Run
 
 ```bash
-# Build
-swift build
-
-# Build and run as macOS app bundle (creates .build/seeport.app)
-./run.sh
+make build          # swift build
+make run            # Build → bundle → kill old process → open app
+make debug          # Build → bundle → run in foreground (stdout/stderr visible)
+make dev            # Watch mode: auto-rebuild on .swift changes (requires fswatch)
+make clean          # swift package clean + remove artifacts
 ```
 
-`run.sh` compiles, creates an app bundle at `.build/seeport.app`, copies `Info.plist`, code-signs ad-hoc, and opens the app.
+**Release:**
+```bash
+make release VERSION=1.0   # Bundle → ZIP → Sparkle signature
+make deploy VERSION=1.0    # release + gh release create
+```
+
+**Testing:** `make test-servers` starts Python HTTP servers on 8080/3000/9999 for port scanning verification.
 
 **Requirements:** Swift 5.9+, macOS 13+, Zsh. Docker CLI optional (for container detection).
 
@@ -22,16 +28,16 @@ Copy `.env.example` to `.env` and fill in Paddle credentials. In dev mode (no cr
 
 ## Architecture
 
-Seeport is a **macOS menu bar app** (`MenuBarExtra` + `LSUIElement: true`) for monitoring listening TCP ports and Docker containers.
+Seeport is a **macOS menu bar app** (`MenuBarExtra` + `LSUIElement: true`) for monitoring listening TCP ports and Docker containers. Single SPM dependency: Sparkle (auto-update).
 
 ### Data Flow
 
-`PortListViewModel` is the central state holder. It runs an async scan loop:
+`PortListViewModel` (@MainActor) is the central state holder. It runs an async scan loop:
 
 1. **PortScanner** (actor) — executes `lsof -iTCP -sTCP:LISTEN -nP -F pcnf`, parses field-based output into `PortInfo` structs
 2. **DockerService** (actor) — runs `docker ps --format` to detect containers and parse port mappings
-3. **CategoryEngine** — multi-stage port classification: user overrides → Docker flag → system commands → process name regex → port number ranges
-4. **ProcessService** — retrieves app icons via `NSRunningApplication`/`NSWorkspace`, handles process killing
+3. **CategoryEngine** — multi-stage port classification: user overrides → Docker flag → system commands → process name regex → port number ranges → 6 categories (Frontend/Backend/Database/Docker/System/Other)
+4. **ProcessService** — retrieves app icons via `NSRunningApplication`/`NSWorkspace`, gets working directory via `lsof -a -d cwd`, handles process killing
 5. **LicenseManager** — 30-day trial via `UserDefaults` first-launch date, Paddle API for activation/verification
 
 ### Web Server
@@ -49,14 +55,16 @@ All state uses `UserDefaults.standard` with `seeport.*` key prefix — favorites
 - **Graceful degradation** — missing Docker CLI returns empty containers, shell failures return empty string
 - **Constants centralization** — colors, fonts, spacing, dimensions in `Constants.swift`
 - **Dark theme** — background RGB(0.11, 0.11, 0.13) with blue/cyan accent throughout
-- **No external dependencies** — pure Swift/SwiftUI, no SPM packages
+- **No external dependencies** — pure Swift/SwiftUI, no SPM packages (except Sparkle)
+- **Settings window** — `SettingsWindowController` manages a floating `NSWindow` with `NSHostingView`, not a SwiftUI WindowGroup
 
 ## UI Structure
 
-`MainPopoverView` (420×600px popover) → HeaderView + SearchBarView + FilterTabsView (All/Docker/Favorites) + PortListView + StatusBarView. Settings is a separate 4-tab view (General/Display/License/About).
+`MainPopoverView` (420×600px popover) → HeaderView + SearchBarView + FilterTabsView (All/Local/Docker/Favorites) + PortListView (grouped by category) + StatusBarView. Settings is a separate floating NSWindow with 3 tabs (General/Tools/About).
 
 ## Bundle Info
 
 - Bundle ID: `com.seeport.app`
 - Architecture: arm64 (Apple Silicon)
-- App icon: programmatically generated via Core Graphics in `SeeportApp.swift`
+- App icon: `AppIcon.icns` in Resources/
+- Auto-update: Sparkle with appcast.xml hosted on GitHub Pages

@@ -23,7 +23,7 @@ struct ProjectPathSection: View {
                 .padding(.horizontal, Constants.Spacing.medium)
 
             // Action buttons
-            HStack(spacing: 6) {
+            HStack(spacing: 4) {
                 pathButton(
                     icon: "folder",
                     label: "Finder",
@@ -34,7 +34,7 @@ struct ProjectPathSection: View {
 
                 pathButton(
                     icon: "chevron.left.forwardslash.chevron.right",
-                    label: settings.externalEditor.rawValue,
+                    label: editorShortName,
                     color: .blue
                 ) {
                     if settings.externalEditor == .custom {
@@ -67,7 +67,7 @@ struct ProjectPathSection: View {
 
                 pathButton(
                     icon: "terminal",
-                    label: settings.shellApp.rawValue,
+                    label: shellShortName,
                     color: .green
                 ) {
                     if settings.shellApp == .custom {
@@ -98,7 +98,6 @@ struct ProjectPathSection: View {
                     }
                 }
 
-                Spacer()
             }
             .padding(.horizontal, Constants.Spacing.medium)
             .padding(.vertical, 6)
@@ -111,6 +110,35 @@ struct ProjectPathSection: View {
         )
     }
 
+    private var editorShortName: String {
+        switch settings.externalEditor {
+        case .vscode: return "VS Code"
+        case .cursor: return "Cursor"
+        case .zed: return "Zed"
+        case .sublime: return "Sublime"
+        case .webstorm: return "WebStorm"
+        case .intellij: return "IntelliJ"
+        case .xcode: return "Xcode"
+        case .neovim: return "Neovim"
+        case .custom:
+            let name = URL(fileURLWithPath: settings.customEditorPath).deletingPathExtension().lastPathComponent
+            return name.isEmpty ? "Editor" : name
+        }
+    }
+
+    private var shellShortName: String {
+        switch settings.shellApp {
+        case .iterm: return "iTerm"
+        case .terminal: return "Terminal"
+        case .warp: return "Warp"
+        case .alacritty: return "Alacritty"
+        case .kitty: return "Kitty"
+        case .custom:
+            let name = URL(fileURLWithPath: settings.customShellPath).deletingPathExtension().lastPathComponent
+            return name.isEmpty ? "Shell" : name
+        }
+    }
+
     private func pathButton(icon: String, label: String, color: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 3) {
@@ -118,6 +146,7 @@ struct ProjectPathSection: View {
                     .font(.system(size: 9))
                 Text(label)
                     .font(.system(size: 9, weight: .medium))
+                    .lineLimit(1)
             }
             .foregroundColor(color)
             .padding(.horizontal, 7)
