@@ -4,6 +4,14 @@ A lightweight macOS menu bar app for monitoring listening TCP ports and Docker c
 
 <img src="https://img.shields.io/badge/macOS-13+-blue" alt="macOS 13+"> <img src="https://img.shields.io/badge/Swift-5.9+-orange" alt="Swift 5.9+"> <img src="https://img.shields.io/badge/License-MIT-green" alt="MIT License">
 
+## Screenshots
+
+<p align="center">
+  <img src="screens/image1.png" width="380" alt="Port monitoring overview">
+  &nbsp;&nbsp;
+  <img src="screens/image2.png" width="380" alt="Docker container detail">
+</p>
+
 ## Overview
 
 Seeport runs in your macOS menu bar and provides instant visibility into what's listening on your local ports. With a single click, see which process owns each port, Docker containers, and manage your network services—all without cluttering your dock.
@@ -11,14 +19,14 @@ Seeport runs in your macOS menu bar and provides instant visibility into what's 
 **Key Features:**
 - Real-time port scanning with process detection
 - Docker container monitoring and port mapping
-- Intelligent port categorization (user overrides → Docker → system commands → regex patterns → ranges)
-- Favorites and custom category overrides
-- External editor integration (VSCode, Cursor, Zed, Sublime, Atom)
-- Shell integration (iTerm2, Terminal, Warp, Alacritty)
-- Keyboard shortcuts for common actions
+- Intelligent port categorization (Frontend / Backend / Database / Docker / System / Other)
+- Favorites with star toggle
+- External editor integration (VS Code, Cursor, Zed, Sublime, WebStorm, IntelliJ, Xcode, Neovim)
+- Shell integration (iTerm2, Terminal, Warp, Alacritty, Kitty) — opens in new window
+- Open any port in browser with one click (`localhost:{port}`)
 - Optional HTTP server (port 7777) with web UI and JSON API
 - Auto-refresh with configurable interval
-- New port / port closed notifications
+- Smart notifications with process name and category
 - In-app bug reporting (via system email client)
 - Sparkle auto-update support
 
@@ -33,305 +41,156 @@ Seeport runs in your macOS menu bar and provides instant visibility into what's 
 
 ### Installation
 
-1. Clone the repository:
+**Download the latest release:**
+
+Download `seeport-v1.1.zip` from [Releases](https://github.com/clover4282/seeport/releases), unzip, and move `seeport.app` to `/Applications`.
+
+**Or build from source:**
+
 ```bash
-git clone https://github.com/yourusername/seeport.git
+git clone https://github.com/clover4282/seeport.git
 cd seeport
-```
-
-2. Copy environment template (optional, for Paddle licensing):
-```bash
-cp .env.example .env
-# Fill in PADDLE_VENDOR_ID, PADDLE_PRODUCT_ID, PADDLE_VENDOR_AUTH_CODE if using licensing
-```
-
-3. Build and run:
-```bash
 make run
 ```
 
-The app will build and launch in your menu bar. Click the network icon to open the popover.
+### Environment (optional)
+
+Copy `.env.example` to `.env` and fill in Paddle credentials for licensing. In dev mode (no credentials), any non-empty license key is accepted.
 
 ## Usage
 
 ### Menu Bar Interface
 
-- **Menu Icon**: Network symbol in the macOS menu bar
-- **Popover**: 420×600px window showing ports grouped by category
-- **Search**: Filter by port number, process name, or category (⌘F)
+- **Menu Icon**: Anchor symbol in the macOS menu bar
+- **Popover**: 420x600px window showing ports grouped by category
+- **Search**: Filter by port number, process name, or category
 - **Tabs**: All / Local / Docker / Favorites
-- **Refresh**: Manually scan ports (⌘R) or enable auto-refresh in settings
-- **Quit**: Exit the app (⌘Q)
+- **Star**: Click the star icon on any port card to toggle favorite
 
 ### Port Categories
 
-Ports are automatically categorized in this order:
+Ports are automatically categorized:
 
-1. **User Overrides** - Custom categories you define
-2. **Docker** - Ports mapped from Docker containers
-3. **Backend** - Common development ports (3000, 5000, 8000, 8080, etc.)
-4. **System** - System services and privileged ports
-5. **Other** - All remaining ports
+| Priority | Source | Example |
+|----------|--------|---------|
+| 1 | User overrides | Custom categories you define |
+| 2 | Docker | Ports mapped from Docker containers |
+| 3 | System commands | Detected via process name |
+| 4 | Regex patterns | Process name matching |
+| 5 | Port ranges | 3000-3999 Frontend, 8000-8999 Backend, etc. |
 
 ### Keyboard Shortcuts
 
 | Shortcut | Action |
 |----------|--------|
-| ⌘R | Refresh ports manually |
-| ⌘F | Focus search bar |
+| ⌘R | Refresh ports |
+| ⌘F | Focus search |
 | ⌘Q | Quit app |
 
 ### Settings
 
-Access settings by clicking the gear icon in the popover header:
+Click the gear icon in the header:
 
-**General**
-- Auto-refresh enabled/disabled
-- Refresh interval (5-60 seconds)
-
-**Tools**
-- Configure preferred editor (VSCode, Cursor, Zed, Sublime, Atom, custom)
-- Configure preferred shell (iTerm2, Terminal, Warp, Alacritty, custom)
-
-**About**
-- Version info and links
-- Report a Bug (opens system email client with pre-filled details)
-- Check for Updates (Sparkle)
+- **General** — Auto-refresh, refresh interval, notifications
+- **Tools** — Preferred editor and shell app
+- **About** — Version, bug report, check for updates
 
 ## Development
 
 ### Build Commands
 
 ```bash
-# Build the Swift package
-make build
-
-# Build app bundle and launch
-make run
-
-# Run in foreground (see stdout/stderr)
-make debug
-
-# Watch files and auto-rebuild (requires fswatch)
-make dev
-
-# Clean build artifacts
-make clean
+make build    # Build Swift package
+make run      # Build → bundle → launch app
+make debug    # Build → run in foreground (stdout visible)
+make dev      # Watch mode with auto-rebuild (requires fswatch)
+make clean    # Clean build artifacts
 ```
 
-### Release Management
+### Release
 
 ```bash
-# Create signed release zip (requires Sparkle signing tools)
-make release VERSION=1.0
-
-# Publish release to GitHub (requires gh CLI)
-make deploy VERSION=1.0
+make release VERSION=1.1   # Bundle → ZIP → Sparkle signature
+make deploy VERSION=1.1    # release + GitHub release
 ```
 
-### Testing
+### Test Servers
 
 ```bash
-# Start test HTTP servers on ports 8080, 3000, 9999
-make test-servers
-
-# Stop test servers
-make test-servers-stop
+make test-servers       # Start Python HTTP servers on 8080/13000/9999
+make test-servers-stop  # Stop all test servers
 ```
 
 ## Architecture
 
+```
+PortScanner (lsof)  →  PortInfo structs
+         ↓
+DockerService (docker ps)  →  DockerContainer data
+         ↓
+ProcessService (NSWorkspace)  →  App icons & process info
+         ↓
+CategoryEngine  →  Classify ports into categories
+         ↓
+PortListViewModel (@Published)  →  SwiftUI views
+         ↓
+MainPopoverView / WebServer  →  User interface
+```
+
 ### Core Components
 
-**PortListViewModel** - Central state management
-- Orchestrates port scanning and Docker detection
-- Manages filtering, search, and categorization
-- Publishes observable changes to SwiftUI views
+| Component | Type | Role |
+|-----------|------|------|
+| **PortScanner** | Actor | `lsof` based port scanning |
+| **DockerService** | Actor | Docker container detection with absolute path lookup |
+| **CategoryEngine** | Enum | Multi-stage port classification |
+| **ProcessService** | Enum | App icons, working directory, process kill |
+| **PortListViewModel** | ObservableObject | Central state holder |
+| **WebServer** | Class | HTTP server on port 7777 (Network framework) |
+| **LicenseManager** | Class | 30-day trial + Paddle API |
 
-**PortScanner** (Swift actor)
-- Executes `lsof -iTCP -sTCP:LISTEN -nP -F pcnf` to list listening ports
-- Parses field-based output into `PortInfo` structs
-- Thread-safe concurrent scanning
+### Key Design Decisions
 
-**DockerService** (Swift actor)
-- Runs `docker ps --format` to detect running containers
-- Parses container names and port mappings
-- Gracefully handles missing Docker CLI
-
-**CategoryEngine**
-- Multi-stage port classification
-- Evaluates user overrides → Docker flag → system commands → process regex patterns → port ranges
-- Extensible rule-based categorization
-
-**ProcessService**
-- Retrieves process metadata via `NSRunningApplication`
-- Fetches application icons from NSWorkspace
-- Handles process termination
-
-**LicenseManager**
-- 30-day free trial tracking via UserDefaults
-- Paddle API integration for license activation/verification
-- License state persistence
-
-**WebServer** (optional)
-- HTTP server on port 7777 using Network framework (NWListener)
-- Serves HTML UI at `/`
-- JSON API at `/api/ports`
-- POST endpoints for process kill and favorite toggle
-
-### Data Flow
-
-```
-1. PortScanner (lsof) → PortInfo structs
-           ↓
-2. DockerService (docker ps) → DockerContainer data
-           ↓
-3. ProcessService (NSWorkspace) → App icons and process info
-           ↓
-4. CategoryEngine → Classify ports
-           ↓
-5. PortListViewModel (Published) → SwiftUI views
-           ↓
-6. MainPopoverView & WebServer (optional) → User interface
-```
-
-### Key Design Patterns
-
-**Actor Concurrency**
-- `PortScanner` and `DockerService` are Swift actors for thread-safe background scanning
-- Eliminates data races in concurrent port detection
-
-**Shell Execution**
-- `ShellExecutor` wraps Foundation's `Process` with Zsh
-- Sync (`run`) and async (`runAsync`) variants
-
-**Graceful Degradation**
-- Missing Docker CLI returns empty containers (no error)
-- Shell command failures return empty string
-- App remains functional with partial data
-
-**Constants Centralization**
-- Colors, fonts, spacing, dimensions in `Constants.swift`
-- Dark theme: background RGB(0.11, 0.11, 0.13) with blue/cyan accent
-
-**Persistence**
-- All state stored in `UserDefaults.standard` with `seeport.*` prefix
-- Favorites, category overrides, settings, license state
-- No Core Data or external database required
-
-### Tech Stack
-
-- **Language**: Pure Swift 5.9+
-- **UI Framework**: SwiftUI with AppKit integration
-- **Concurrency**: Swift Actors (PortScanner, DockerService)
-- **HTTP Server**: Network framework (NWListener)
-- **Licensing**: Paddle API
-- **Auto-Update**: Sparkle framework
-- **External Dependencies**: Sparkle only (for auto-updates)
-
-### Bundle Information
-
-- **Bundle ID**: `com.seeport.app`
-- **Architecture**: arm64 (Apple Silicon)
-- **Menu Bar Style**: MenuBarExtra with window styling
-- **App Icon**: AppIcon.icns in Resources/
-- **Activation Policy**: Accessory (menu bar only, no dock icon)
-
-## Configuration
-
-### Environment Variables
-
-Create a `.env` file in the project root:
-
-```bash
-PADDLE_VENDOR_ID=your_vendor_id
-PADDLE_PRODUCT_ID=your_product_id
-PADDLE_VENDOR_AUTH_CODE=your_auth_code
-PADDLE_CHECKOUT_URL=https://buy.paddle.com/product/YOUR_PRODUCT_ID
-```
-
-In development mode (no credentials), any non-empty license key is accepted.
-
-### Customization
-
-**Port Categories** - Edit `CategoryEngine.swift` to add custom port ranges or regex patterns.
-
-**Colors & Theme** - Update `Constants.swift` to customize the dark theme.
-
-**Refresh Interval** - Adjustable in Settings (5-60 seconds).
-
-**External Tools** - Configure preferred editor and shell in Settings.
+- **Actor concurrency** for thread-safe scanning
+- **Absolute Docker path lookup** — searches `/usr/local/bin/docker`, `/opt/homebrew/bin/docker`, etc. to work in GUI app context where PATH is minimal
+- **`open -a` for editors** — avoids PATH dependency when launching VS Code, Cursor, etc.
+- **AppleScript for iTerm/Terminal** — opens new window instead of tab
+- **Dark theme** — background RGB(0.11, 0.11, 0.13) with blue/cyan accent
+- **UserDefaults persistence** — all state with `seeport.*` prefix, no Core Data
+- **Single dependency** — Sparkle only (for auto-updates)
 
 ## HTTP API
 
-If enabled, the web server on port 7777 provides:
+When enabled, the web server on port 7777 provides:
 
-**GET /api/ports**
-Returns JSON array of current listening ports with process info.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | Web UI |
+| GET | `/api/ports` | JSON array of listening ports |
+| POST | `/api/ports/{port}/kill` | Terminate process on port |
+| POST | `/api/ports/{port}/favorite` | Toggle favorite status |
 
-**POST /api/ports/{port}/kill**
-Terminate the process on a specified port.
-
-**POST /api/ports/{port}/favorite**
-Toggle favorite status for a port.
-
-## Files & Structure
+## Project Structure
 
 ```
 Sources/seeport/
-├── App/
-│   └── SeeportApp.swift          # App entry point & delegate
-├── Models/
-│   ├── PortInfo.swift             # Port data structure
-│   ├── PortCategory.swift         # Category enumeration
-│   ├── ProcessInfo.swift          # Process metadata
-│   └── DockerContainer.swift      # Docker container data
-├── Services/
-│   ├── PortScanner.swift          # lsof-based port scanning
-│   ├── DockerService.swift        # docker ps integration
-│   ├── ProcessService.swift       # App icons & termination
-│   ├── CategoryEngine.swift       # Port classification
-│   ├── LicenseManager.swift       # Trial & Paddle licensing
-│   ├── PaddleService.swift        # Paddle API client
-│   └── WebServer.swift            # HTTP server on port 7777
-├── ViewModels/
-│   └── PortListViewModel.swift    # Central state management
-├── Views/
-│   ├── MainPopoverView.swift      # Root popover
-│   ├── PortListView.swift         # Scrollable port list
-│   ├── PortCardView.swift         # Individual port card
-│   ├── SettingsView.swift         # Settings tabs
-│   ├── SearchBarView.swift        # Search input
-│   ├── FilterTabsView.swift       # Tab navigation
-│   ├── BugReportView.swift       # Bug report with email
-│   └── Other UI components
-├── Utilities/
-│   ├── ShellExecutor.swift        # Process wrapper
-│   ├── Constants.swift             # Colors, fonts, spacing
-│   ├── Favorites.swift             # Favorite management
-│   ├── CategoryOverrides.swift     # Custom categories
-│   ├── SettingsManager.swift      # Settings persistence
-│   ├── LicenseManager.swift       # Trial tracking
-│   ├── PaddleConfig.swift         # Paddle credentials
-│   ├── PortDatabase.swift         # Port → service mapping
-│   └── EnvLoader.swift            # Environment config
-└── Resources/
-    ├── Info.plist                  # App metadata
-    └── AppIcon.icns               # App icon
+├── App/              # App entry point & delegate
+├── Models/           # PortInfo, PortCategory, DockerContainer
+├── Services/         # PortScanner, DockerService, CategoryEngine, WebServer
+├── ViewModels/       # PortListViewModel
+├── Views/            # SwiftUI views (Popover, Cards, Settings, etc.)
+├── Utilities/        # ShellExecutor, Constants, Favorites, SettingsManager
+└── Resources/        # Info.plist, AppIcon.icns
 ```
 
 ## License
 
 MIT License - see LICENSE file for details.
 
-## Contributing
-
-Contributions welcome! Please submit pull requests to the main branch.
-
 ## Support
 
-For issues, feature requests, or questions, open an issue on GitHub or visit the project homepage.
+For issues or feature requests, [open an issue](https://github.com/clover4282/seeport/issues) on GitHub.
 
 ---
 
-**Seeport** - Know what's listening, at a glance.
+**Seeport** — Know what's listening, at a glance.
