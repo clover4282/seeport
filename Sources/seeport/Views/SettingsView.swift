@@ -331,12 +331,23 @@ struct SettingsView: View {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
     }
 
+    private static let cachedAppIcon: NSImage = {
+        if let url = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"),
+           let image = NSImage(contentsOf: url) {
+            image.size = NSSize(width: 512, height: 512)
+            return image
+        }
+        return NSApp.applicationIconImage ?? NSImage()
+    }()
+
     private var aboutTab: some View {
         VStack(spacing: 20) {
-            VStack(spacing: 8) {
-                Image(systemName: "network")
-                    .font(.system(size: 36))
-                    .foregroundStyle(LinearGradient(colors: [.blue, .cyan], startPoint: .topLeading, endPoint: .bottomTrailing))
+            VStack(spacing: 6) {
+                Image(nsImage: Self.cachedAppIcon)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 72, height: 72)
+                    .cornerRadius(16)
 
                 HStack(spacing: 0) {
                     Text("see").font(.system(size: 18, weight: .bold)).foregroundColor(.white)
@@ -362,22 +373,45 @@ struct SettingsView: View {
                 flatInfoRow("Overrides", value: "\(CategoryOverrides.load().count) ports")
             }
 
+            flatSection("Support") {
+                Button(action: {
+                    // TODO: Buy Me a Coffee 계정 생성 후 URL 변경
+                    if let url = URL(string: "https://buymeacoffee.com/your-username") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }) {
+                    HStack {
+                        Text("Buy me a coffee")
+                            .font(.system(size: 13))
+                            .foregroundColor(Constants.Colors.textPrimary)
+                        Spacer()
+                        Text("☕")
+                            .font(.system(size: 14))
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .hoverCursor()
+            }
+
             flatSection("Updates") {
                 Button(action: {
-                    let updater = SeeportDelegate.updater
+                    guard let updater = SeeportDelegate.updater else { return }
                     NSApp.setActivationPolicy(.regular)
 
-                    // Lower Settings window level so Sparkle window appears on top
-                    let settingsWindow = NSApp.windows.first { $0.title == "Seeport Settings" }
+                    let settingsWindow = SettingsWindowController.shared.window
                     settingsWindow?.level = .normal
 
                     NSApp.activate(ignoringOtherApps: true)
                     updater.checkForUpdates()
 
-                    // Restore after Sparkle session ends
+                    // Restore after Sparkle session ends (max 30s timeout)
                     Task {
                         try? await Task.sleep(nanoseconds: 2_000_000_000)
-                        while updater.sessionInProgress {
+                        for _ in 0..<60 {
+                            guard updater.sessionInProgress else { break }
                             try? await Task.sleep(nanoseconds: 500_000_000)
                         }
                         await MainActor.run {

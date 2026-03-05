@@ -50,11 +50,21 @@ enum ShellApp: String, CaseIterable {
 final class SettingsManager: ObservableObject {
     static let shared = SettingsManager()
 
-    @Published var autoRefreshEnabled: Bool = true
-    @Published var refreshInterval: TimeInterval = 5.0
-    @Published var showProcessIcons: Bool = true
-    @Published var notifyNewPort: Bool = true
-    @Published var notifyRemovedPort: Bool = false
+    @Published var autoRefreshEnabled: Bool = true {
+        didSet { UserDefaults.standard.set(autoRefreshEnabled, forKey: "seeport.autoRefreshEnabled") }
+    }
+    @Published var refreshInterval: TimeInterval = 5.0 {
+        didSet { UserDefaults.standard.set(refreshInterval, forKey: "seeport.refreshInterval") }
+    }
+    @Published var showProcessIcons: Bool = true {
+        didSet { UserDefaults.standard.set(showProcessIcons, forKey: "seeport.showProcessIcons") }
+    }
+    @Published var notifyNewPort: Bool = true {
+        didSet { UserDefaults.standard.set(notifyNewPort, forKey: "seeport.notifyNewPort") }
+    }
+    @Published var notifyRemovedPort: Bool = false {
+        didSet { UserDefaults.standard.set(notifyRemovedPort, forKey: "seeport.notifyRemovedPort") }
+    }
     @Published var externalEditor: ExternalEditor {
         didSet { UserDefaults.standard.set(externalEditor.rawValue, forKey: "seeport.externalEditor") }
     }
@@ -75,14 +85,33 @@ final class SettingsManager: ObservableObject {
     }
 
     private init() {
-        let editorRaw = UserDefaults.standard.string(forKey: "seeport.externalEditor") ?? ""
+        let defaults = UserDefaults.standard
+
+        // Load persisted values (use registered defaults if not set)
+        if defaults.object(forKey: "seeport.autoRefreshEnabled") != nil {
+            autoRefreshEnabled = defaults.bool(forKey: "seeport.autoRefreshEnabled")
+        }
+        if defaults.object(forKey: "seeport.refreshInterval") != nil {
+            refreshInterval = defaults.double(forKey: "seeport.refreshInterval")
+        }
+        if defaults.object(forKey: "seeport.showProcessIcons") != nil {
+            showProcessIcons = defaults.bool(forKey: "seeport.showProcessIcons")
+        }
+        if defaults.object(forKey: "seeport.notifyNewPort") != nil {
+            notifyNewPort = defaults.bool(forKey: "seeport.notifyNewPort")
+        }
+        if defaults.object(forKey: "seeport.notifyRemovedPort") != nil {
+            notifyRemovedPort = defaults.bool(forKey: "seeport.notifyRemovedPort")
+        }
+
+        let editorRaw = defaults.string(forKey: "seeport.externalEditor") ?? ""
         externalEditor = ExternalEditor(rawValue: editorRaw) ?? .vscode
-        let shellRaw = UserDefaults.standard.string(forKey: "seeport.shellApp") ?? ""
+        let shellRaw = defaults.string(forKey: "seeport.shellApp") ?? ""
         shellApp = ShellApp(rawValue: shellRaw) ?? .iterm
-        customEditorPath = UserDefaults.standard.string(forKey: "seeport.customEditorPath") ?? ""
-        customEditorArgs = UserDefaults.standard.string(forKey: "seeport.customEditorArgs") ?? ""
-        customShellPath = UserDefaults.standard.string(forKey: "seeport.customShellPath") ?? ""
-        customShellArgs = UserDefaults.standard.string(forKey: "seeport.customShellArgs") ?? ""
+        customEditorPath = defaults.string(forKey: "seeport.customEditorPath") ?? ""
+        customEditorArgs = defaults.string(forKey: "seeport.customEditorArgs") ?? ""
+        customShellPath = defaults.string(forKey: "seeport.customShellPath") ?? ""
+        customShellArgs = defaults.string(forKey: "seeport.customShellArgs") ?? ""
     }
 
     func resetToDefaults() {

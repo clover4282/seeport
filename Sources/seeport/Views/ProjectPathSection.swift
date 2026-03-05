@@ -37,9 +37,31 @@ struct ProjectPathSection: View {
                     label: settings.externalEditor.rawValue,
                     color: .blue
                 ) {
-                    let cmd = settings.externalEditor.command
-                    Task {
-                        await ShellExecutor.runAsync("\(cmd) \"\(path)\" &")
+                    if settings.externalEditor == .custom {
+                        let editorPath = settings.customEditorPath
+                        guard !editorPath.isEmpty else { return }
+                        let args: [String]
+                        if settings.customEditorArgs.isEmpty {
+                            args = [path]
+                        } else {
+                            args = settings.customEditorArgs
+                                .replacingOccurrences(of: "%TARGET_PATH%", with: path)
+                                .components(separatedBy: " ")
+                        }
+                        Task {
+                            let process = Process()
+                            process.executableURL = URL(fileURLWithPath: editorPath)
+                            process.arguments = args
+                            try? process.run()
+                        }
+                    } else {
+                        let cmd = settings.externalEditor.command
+                        Task {
+                            let process = Process()
+                            process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+                            process.arguments = [cmd, path]
+                            try? process.run()
+                        }
                     }
                 }
 
@@ -48,11 +70,31 @@ struct ProjectPathSection: View {
                     label: settings.shellApp.rawValue,
                     color: .green
                 ) {
-                    let bundleId = settings.shellApp.bundleId
-                    let url = URL(fileURLWithPath: path)
-                    if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) {
-                        let config = NSWorkspace.OpenConfiguration()
-                        NSWorkspace.shared.open([url], withApplicationAt: appURL, configuration: config)
+                    if settings.shellApp == .custom {
+                        let shellPath = settings.customShellPath
+                        guard !shellPath.isEmpty else { return }
+                        let args: [String]
+                        if settings.customShellArgs.isEmpty {
+                            args = [path]
+                        } else {
+                            args = settings.customShellArgs
+                                .replacingOccurrences(of: "%TARGET_PATH%", with: path)
+                                .components(separatedBy: " ")
+                        }
+                        Task {
+                            let process = Process()
+                            process.executableURL = URL(fileURLWithPath: shellPath)
+                            process.arguments = args
+                            process.currentDirectoryURL = URL(fileURLWithPath: path)
+                            try? process.run()
+                        }
+                    } else {
+                        let bundleId = settings.shellApp.bundleId
+                        let url = URL(fileURLWithPath: path)
+                        if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) {
+                            let config = NSWorkspace.OpenConfiguration()
+                            NSWorkspace.shared.open([url], withApplicationAt: appURL, configuration: config)
+                        }
                     }
                 }
 

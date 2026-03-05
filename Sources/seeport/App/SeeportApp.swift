@@ -8,19 +8,23 @@ struct SeeportApp: App {
     @NSApplicationDelegateAdaptor(SeeportDelegate.self) var delegate
 
     var body: some Scene {
-        MenuBarExtra("seeport", systemImage: Constants.menuBarIcon) {
+        MenuBarExtra {
             MainPopoverView()
+        } label: {
+            Image(nsImage: SeeportDelegate.menuBarIcon)
         }
         .menuBarExtraStyle(.window)
     }
 }
 
 final class SeeportDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
-    static private(set) var updaterController: SPUStandardUpdaterController!
+    static private(set) var updaterController: SPUStandardUpdaterController?
 
-    static var updater: SPUUpdater {
-        updaterController.updater
+    static var updater: SPUUpdater? {
+        updaterController?.updater
     }
+
+    static let menuBarIcon: NSImage = makeMenuBarIcon()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -34,6 +38,10 @@ final class SeeportDelegate: NSObject, NSApplicationDelegate, UNUserNotification
         )
     }
 
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
+    }
+
     // Show notifications even when app is in foreground
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
@@ -43,46 +51,103 @@ final class SeeportDelegate: NSObject, NSApplicationDelegate, UNUserNotification
         completionHandler([.banner, .sound])
     }
 
-    private static func makeAppIcon() -> NSImage {
-        let size: CGFloat = 512
+    static func makeMenuBarIcon() -> NSImage {
+        let size: CGFloat = 18
         let image = NSImage(size: NSSize(width: size, height: size))
         image.lockFocus()
 
-        // Background rounded rect
-        let bgRect = NSRect(x: 20, y: 20, width: size - 40, height: size - 40)
-        let bgPath = NSBezierPath(roundedRect: bgRect, xRadius: 100, yRadius: 100)
-        NSColor(red: 0.12, green: 0.12, blue: 0.18, alpha: 1.0).setFill()
-        bgPath.fill()
+        let cx = size / 2
+        let color = NSColor.black
 
-        // Gradient overlay
-        if let gradient = NSGradient(
-            starting: NSColor(red: 0.2, green: 0.4, blue: 1.0, alpha: 0.25),
-            ending: NSColor(red: 0.0, green: 0.7, blue: 1.0, alpha: 0.1)
-        ) {
-            gradient.draw(in: bgPath, angle: -45)
-        }
-
-        // Network icon
-        if let symbol = NSImage(systemSymbolName: "network", accessibilityDescription: nil) {
-            let config = NSImage.SymbolConfiguration(pointSize: 180, weight: .medium)
-                .applying(.init(paletteColors: [.white]))
-            let rendered = symbol.withSymbolConfiguration(config) ?? symbol
-            let w = rendered.size.width
-            let h = rendered.size.height
-            rendered.draw(
-                in: NSRect(x: (size - w) / 2, y: (size - h) / 2, width: w, height: h),
-                from: .zero, operation: .sourceOver, fraction: 0.9
+        // Ring at top
+        let ringRadius: CGFloat = 2.2
+        let ringCenter = NSPoint(x: cx, y: 15.5)
+        let ring = NSBezierPath(
+            ovalIn: NSRect(
+                x: ringCenter.x - ringRadius,
+                y: ringCenter.y - ringRadius,
+                width: ringRadius * 2,
+                height: ringRadius * 2
             )
-        }
+        )
+        ring.lineWidth = 1.4
+        color.setStroke()
+        ring.stroke()
 
-        // Accent border
-        let ringRect = NSRect(x: 24, y: 24, width: size - 48, height: size - 48)
-        let ringPath = NSBezierPath(roundedRect: ringRect, xRadius: 98, yRadius: 98)
-        ringPath.lineWidth = 4
-        NSColor(red: 0.3, green: 0.5, blue: 1.0, alpha: 0.5).setStroke()
-        ringPath.stroke()
+        // Shaft (vertical line)
+        let shaft = NSBezierPath()
+        shaft.move(to: NSPoint(x: cx, y: 13.5))
+        shaft.line(to: NSPoint(x: cx, y: 3.5))
+        shaft.lineWidth = 1.6
+        shaft.lineCapStyle = .round
+        color.setStroke()
+        shaft.stroke()
+
+        // Cross bar
+        let bar = NSBezierPath()
+        bar.move(to: NSPoint(x: cx - 4, y: 11))
+        bar.line(to: NSPoint(x: cx + 4, y: 11))
+        bar.lineWidth = 1.6
+        bar.lineCapStyle = .round
+        color.setStroke()
+        bar.stroke()
+
+        // Left fluke
+        let leftFluke = NSBezierPath()
+        leftFluke.move(to: NSPoint(x: cx, y: 3.5))
+        leftFluke.curve(
+            to: NSPoint(x: cx - 5.5, y: 7),
+            controlPoint1: NSPoint(x: cx - 0.5, y: 1.5),
+            controlPoint2: NSPoint(x: cx - 5.5, y: 2)
+        )
+        leftFluke.lineWidth = 1.4
+        leftFluke.lineCapStyle = .round
+        color.setStroke()
+        leftFluke.stroke()
+
+        // Left arrowhead
+        let la = NSBezierPath()
+        la.move(to: NSPoint(x: cx - 5.5, y: 7))
+        la.line(to: NSPoint(x: cx - 6.8, y: 5))
+        la.lineWidth = 1.4
+        la.lineCapStyle = .round
+        color.setStroke()
+        la.stroke()
+
+        // Right fluke
+        let rightFluke = NSBezierPath()
+        rightFluke.move(to: NSPoint(x: cx, y: 3.5))
+        rightFluke.curve(
+            to: NSPoint(x: cx + 5.5, y: 7),
+            controlPoint1: NSPoint(x: cx + 0.5, y: 1.5),
+            controlPoint2: NSPoint(x: cx + 5.5, y: 2)
+        )
+        rightFluke.lineWidth = 1.4
+        rightFluke.lineCapStyle = .round
+        color.setStroke()
+        rightFluke.stroke()
+
+        // Right arrowhead
+        let ra = NSBezierPath()
+        ra.move(to: NSPoint(x: cx + 5.5, y: 7))
+        ra.line(to: NSPoint(x: cx + 6.8, y: 5))
+        ra.lineWidth = 1.4
+        ra.lineCapStyle = .round
+        color.setStroke()
+        ra.stroke()
 
         image.unlockFocus()
+        image.isTemplate = true
         return image
+    }
+
+    private static func makeAppIcon() -> NSImage {
+        // Load from bundle's AppIcon.icns
+        if let url = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"),
+           let image = NSImage(contentsOf: url) {
+            return image
+        }
+        // Fallback: generic anchor icon
+        return NSImage(systemSymbolName: "anchor", accessibilityDescription: "Seeport") ?? NSImage()
     }
 }

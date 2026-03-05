@@ -1,12 +1,13 @@
 import SwiftUI
 import AppKit
 
-final class SettingsWindowController {
+final class SettingsWindowController: NSObject, NSWindowDelegate {
     static let shared = SettingsWindowController()
-    private var window: NSWindow?
+    private(set) var window: NSWindow?
 
     func open(viewModel: PortListViewModel) {
-        if let existing = window, existing.isVisible {
+        if let existing = window {
+            existing.contentView = NSHostingView(rootView: SettingsView(viewModel: viewModel))
             existing.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -28,9 +29,15 @@ final class SettingsWindowController {
         w.isMovableByWindowBackground = true
         w.center()
         w.level = .floating
+        w.delegate = self
         w.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
 
         self.window = w
+    }
+
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        sender.orderOut(nil)
+        return false
     }
 }
