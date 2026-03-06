@@ -8,7 +8,10 @@ struct MainPopoverView: View {
             .frame(width: Constants.popoverWidth, height: Constants.popoverHeight)
             .background(Constants.Colors.background)
             .onAppear {
-                Task { await viewModel.refresh() }
+                viewModel.setPopoverVisible(true)
+            }
+            .onDisappear {
+                viewModel.setPopoverVisible(false)
             }
     }
 

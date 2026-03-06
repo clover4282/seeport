@@ -14,10 +14,9 @@ enum ProcessService {
         if let app = NSRunningApplication(processIdentifier: pid), let appIcon = app.icon {
             return appIcon
         }
-        // Fallback: icon from executable path
-        let result = ShellExecutor.run("ps -p \(pid) -o comm= 2>/dev/null")
-        let path = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !path.isEmpty {
+        // Fallback: use proc_pidpath (no shell fork)
+        let path = getExecutablePath(pid: pid)
+        if let path, !path.isEmpty {
             // Walk up to find .app bundle
             var url = URL(fileURLWithPath: path)
             for _ in 0..<5 {
@@ -29,6 +28,14 @@ enum ProcessService {
             return NSWorkspace.shared.icon(forFile: path)
         }
         return NSWorkspace.shared.icon(forFile: "/usr/bin/env")
+    }
+
+    private static func getExecutablePath(pid: Int32) -> String? {
+        let maxPathSize = 4 * Int(MAXPATHLEN)
+        var pathBuffer = [CChar](repeating: 0, count: maxPathSize)
+        let pathLen = proc_pidpath(pid, &pathBuffer, UInt32(maxPathSize))
+        guard pathLen > 0 else { return nil }
+        return String(cString: pathBuffer)
     }
 
     static func getWorkingDirectory(pid: Int32) async -> String? {

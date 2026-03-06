@@ -54,7 +54,7 @@ final class SettingsManager: ObservableObject {
     @Published var autoRefreshEnabled: Bool = true {
         didSet { UserDefaults.standard.set(autoRefreshEnabled, forKey: "seeport.autoRefreshEnabled") }
     }
-    @Published var refreshInterval: TimeInterval = 10.0 {
+    @Published var refreshInterval: TimeInterval = 5.0 {
         didSet { UserDefaults.standard.set(refreshInterval, forKey: "seeport.refreshInterval") }
     }
     @Published var showProcessIcons: Bool = true {
@@ -161,7 +161,7 @@ final class SettingsManager: ObservableObject {
 
     func resetToDefaults() {
         autoRefreshEnabled = true
-        refreshInterval = 10.0
+        refreshInterval = 5.0
         showProcessIcons = true
         notifyNewPort = true
         notifyRemovedPort = true

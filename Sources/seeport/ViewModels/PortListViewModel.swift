@@ -28,6 +28,7 @@ final class PortListViewModel: ObservableObject {
     private var knownPorts: Set<UInt16> = []
     private var isFirstScan = true
     private var workingDirCache: [Int32: String?] = [:]
+    private(set) var isPopoverVisible = false
 
     var autoRefreshEnabled: Bool { settings.autoRefreshEnabled }
     var autoRefreshInterval: TimeInterval { settings.refreshInterval }
@@ -86,12 +87,33 @@ final class PortListViewModel: ObservableObject {
         }
     }
 
+    func setPopoverVisible(_ visible: Bool) {
+        isPopoverVisible = visible
+        if visible {
+            Task { await refresh() }
+            restartTimer()
+        } else {
+            restartTimer()
+        }
+    }
+
     func startAutoRefresh() {
         stopAutoRefresh()
-        Task { await refresh() }
+        let refreshFunc: () async -> Void = isPopoverVisible ? refresh : lightRefresh
+        Task { await refreshFunc() }
+        restartTimer()
+    }
+
+    private func restartTimer() {
+        timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: settings.refreshInterval, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
-                await self?.refresh()
+                guard let self else { return }
+                if self.isPopoverVisible {
+                    await self.refresh()
+                } else {
+                    await self.lightRefresh()
+                }
             }
         }
     }
@@ -99,6 +121,59 @@ final class PortListViewModel: ObservableObject {
     func stopAutoRefresh() {
         timer?.invalidate()
         timer = nil
+    }
+
+    /// Lightweight refresh: port scan only (no Docker, no working dir, no icons).
+    /// Used when popover is closed to minimize energy usage.
+    func lightRefresh() async {
+        let scannedPorts = await portScanner.scan()
+
+        // Apply categories without Docker enrichment
+        let results = scannedPorts.map { port -> PortInfo in
+            let category = CategoryEngine.categorize(
+                port: port.port,
+                command: port.process.name,
+                isDocker: false,
+                dockerImage: nil
+            )
+            return PortInfo(
+                port: port.port,
+                process: port.process,
+                category: category,
+                address: port.address,
+                isFavorite: Favorites.isFavorite(port.port)
+            )
+        }
+
+        // Detect new and removed ports for notifications
+        let currentPorts = Set(results.map(\.port))
+        if !isFirstScan {
+            if settings.notifyNewPort {
+                let newPorts = currentPorts.subtracting(knownPorts)
+                for newPort in newPorts {
+                    if let info = results.first(where: { $0.port == newPort }),
+                       shouldNotify(for: info.category) {
+                        sendNotification(for: info)
+                    }
+                }
+            }
+            if settings.notifyRemovedPort {
+                let removedPorts = knownPorts.subtracting(currentPorts)
+                for removedPort in removedPorts {
+                    let category = lastKnownPortInfo[removedPort]?.category
+                    if category == nil || shouldNotify(for: category!) {
+                        sendRemovedNotification(port: removedPort)
+                    }
+                }
+            }
+        }
+        knownPorts = currentPorts
+        isFirstScan = false
+
+        // Update minimal published state
+        ports = results.sorted { $0.port < $1.port }
+        portCount = ports.count
+        lastScanTime = Date()
     }
 
     func refresh() async {

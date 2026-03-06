@@ -131,24 +131,51 @@ actor DockerService {
     }
 
     func enrichWithProjectPaths(_ containers: [DockerContainer]) async -> [DockerContainer] {
-        var enriched: [DockerContainer] = []
-        for container in containers {
-            var c = container
-            let result = await ShellExecutor.runAsync(
-                "\(dockerPath) inspect --format '{{range .Mounts}}{{if eq .Type \"bind\"}}{{.Source}}{{\"\\n\"}}{{end}}{{end}}' \(container.id) 2>/dev/null"
-            )
-            if result.exitCode == 0 {
-                let lines = result.output.split(separator: "\n", omittingEmptySubsequences: true)
-                if let first = lines.first {
-                    let path = String(first)
+        guard !containers.isEmpty else { return containers }
+
+        // Batch: single docker inspect call for all containers
+        let ids = containers.map(\.id).joined(separator: " ")
+        let result = await ShellExecutor.runAsync(
+            "\(dockerPath) inspect --format '{{.Id}}\\t{{range .Mounts}}{{if eq .Type \"bind\"}}{{.Source}}{{\"\\n\"}}{{end}}{{end}}' \(ids) 2>/dev/null"
+        )
+
+        // Parse batch output: each container's output starts with full ID + tab
+        var pathMap: [String: String] = [:]
+        if result.exitCode == 0 {
+            // docker inspect outputs one block per container; Id line starts each block
+            var currentShortId: String?
+            for line in result.output.split(separator: "\n", omittingEmptySubsequences: true) {
+                let s = String(line)
+                if s.contains("\t") {
+                    let parts = s.split(separator: "\t", maxSplits: 1)
+                    let fullId = String(parts[0])
+                    // Match by short ID prefix (docker ps uses short IDs)
+                    let shortId = containers.first { fullId.hasPrefix($0.id) }?.id
+                    currentShortId = shortId
+                    // If there's a path after the tab, use it
+                    if parts.count > 1 {
+                        let path = String(parts[1])
+                        if !path.isEmpty && path != "/", let sid = currentShortId, pathMap[sid] == nil {
+                            pathMap[sid] = path
+                        }
+                    }
+                } else if let sid = currentShortId, pathMap[sid] == nil {
+                    // Continuation line: a bind mount path
+                    let path = s.trimmingCharacters(in: .whitespaces)
                     if !path.isEmpty && path != "/" {
-                        c.projectPath = path
+                        pathMap[sid] = path
                     }
                 }
             }
-            enriched.append(c)
         }
-        return enriched
+
+        return containers.map { container in
+            var c = container
+            if let path = pathMap[container.id] {
+                c.projectPath = path
+            }
+            return c
+        }
     }
 
     func stop(id: String) async -> Bool {
