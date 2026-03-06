@@ -7,6 +7,9 @@ struct MainPopoverView: View {
         mainContent
             .frame(width: Constants.popoverWidth, height: Constants.popoverHeight)
             .background(Constants.Colors.background)
+            .onAppear {
+                Task { await viewModel.refresh() }
+            }
     }
 
     private var dockerContainerList: some View {

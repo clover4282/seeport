@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import ServiceManagement
 
 enum ExternalEditor: String, CaseIterable {
     case vscode = "Visual Studio Code"
@@ -62,8 +63,20 @@ final class SettingsManager: ObservableObject {
     @Published var notifyNewPort: Bool = true {
         didSet { UserDefaults.standard.set(notifyNewPort, forKey: "seeport.notifyNewPort") }
     }
-    @Published var notifyRemovedPort: Bool = false {
+    @Published var notifyRemovedPort: Bool = true {
         didSet { UserDefaults.standard.set(notifyRemovedPort, forKey: "seeport.notifyRemovedPort") }
+    }
+    @Published var notifyLocalPorts: Bool = true {
+        didSet { UserDefaults.standard.set(notifyLocalPorts, forKey: "seeport.notifyLocalPorts") }
+    }
+    @Published var notifyDockerPorts: Bool = true {
+        didSet { UserDefaults.standard.set(notifyDockerPorts, forKey: "seeport.notifyDockerPorts") }
+    }
+    @Published var notifySystemPorts: Bool = false {
+        didSet { UserDefaults.standard.set(notifySystemPorts, forKey: "seeport.notifySystemPorts") }
+    }
+    @Published var notifyOtherPorts: Bool = false {
+        didSet { UserDefaults.standard.set(notifyOtherPorts, forKey: "seeport.notifyOtherPorts") }
     }
     @Published var externalEditor: ExternalEditor {
         didSet { UserDefaults.standard.set(externalEditor.rawValue, forKey: "seeport.externalEditor") }
@@ -82,6 +95,15 @@ final class SettingsManager: ObservableObject {
     }
     @Published var customShellArgs: String {
         didSet { UserDefaults.standard.set(customShellArgs, forKey: "seeport.customShellArgs") }
+    }
+    @Published var launchAtLogin: Bool = true {
+        didSet {
+            if launchAtLogin {
+                try? SMAppService.mainApp.register()
+            } else {
+                try? SMAppService.mainApp.unregister()
+            }
+        }
     }
 
     private init() {
@@ -103,6 +125,18 @@ final class SettingsManager: ObservableObject {
         if defaults.object(forKey: "seeport.notifyRemovedPort") != nil {
             notifyRemovedPort = defaults.bool(forKey: "seeport.notifyRemovedPort")
         }
+        if defaults.object(forKey: "seeport.notifyLocalPorts") != nil {
+            notifyLocalPorts = defaults.bool(forKey: "seeport.notifyLocalPorts")
+        }
+        if defaults.object(forKey: "seeport.notifyDockerPorts") != nil {
+            notifyDockerPorts = defaults.bool(forKey: "seeport.notifyDockerPorts")
+        }
+        if defaults.object(forKey: "seeport.notifySystemPorts") != nil {
+            notifySystemPorts = defaults.bool(forKey: "seeport.notifySystemPorts")
+        }
+        if defaults.object(forKey: "seeport.notifyOtherPorts") != nil {
+            notifyOtherPorts = defaults.bool(forKey: "seeport.notifyOtherPorts")
+        }
 
         let editorRaw = defaults.string(forKey: "seeport.externalEditor") ?? ""
         externalEditor = ExternalEditor(rawValue: editorRaw) ?? .vscode
@@ -112,6 +146,17 @@ final class SettingsManager: ObservableObject {
         customEditorArgs = defaults.string(forKey: "seeport.customEditorArgs") ?? ""
         customShellPath = defaults.string(forKey: "seeport.customShellPath") ?? ""
         customShellArgs = defaults.string(forKey: "seeport.customShellArgs") ?? ""
+        let currentStatus = SMAppService.mainApp.status
+        if currentStatus == .enabled {
+            launchAtLogin = true
+        } else if currentStatus == .notRegistered && defaults.object(forKey: "seeport.launchAtLoginSet") == nil {
+            // First launch: register by default
+            defaults.set(true, forKey: "seeport.launchAtLoginSet")
+            try? SMAppService.mainApp.register()
+            launchAtLogin = true
+        } else {
+            launchAtLogin = false
+        }
     }
 
     func resetToDefaults() {
@@ -119,7 +164,11 @@ final class SettingsManager: ObservableObject {
         refreshInterval = 10.0
         showProcessIcons = true
         notifyNewPort = true
-        notifyRemovedPort = false
+        notifyRemovedPort = true
+        notifyLocalPorts = true
+        notifyDockerPorts = true
+        notifySystemPorts = false
+        notifyOtherPorts = false
         externalEditor = .vscode
         shellApp = .iterm
         customEditorPath = ""

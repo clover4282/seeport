@@ -38,10 +38,15 @@ final class PortListViewModel: ObservableObject {
     }
 
     func applySettings() {
-        if settings.autoRefreshEnabled {
-            startAutoRefresh()
-        } else {
-            stopAutoRefresh()
+        UNUserNotificationCenter.current().getNotificationSettings { [weak self] s in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                if self.settings.autoRefreshEnabled && s.authorizationStatus == .authorized {
+                    self.startAutoRefresh()
+                } else {
+                    self.stopAutoRefresh()
+                }
+            }
         }
     }
 
@@ -177,7 +182,8 @@ final class PortListViewModel: ObservableObject {
             if settings.notifyNewPort {
                 let newPorts = currentPorts.subtracting(knownPorts)
                 for newPort in newPorts {
-                    if let info = ports.first(where: { $0.port == newPort }) {
+                    if let info = ports.first(where: { $0.port == newPort }),
+                       shouldNotify(for: info.category) {
                         sendNotification(for: info)
                     }
                 }
@@ -185,7 +191,10 @@ final class PortListViewModel: ObservableObject {
             if settings.notifyRemovedPort {
                 let removedPorts = knownPorts.subtracting(currentPorts)
                 for removedPort in removedPorts {
-                    sendRemovedNotification(port: removedPort)
+                    let category = lastKnownPortInfo[removedPort]?.category
+                    if category == nil || shouldNotify(for: category!) {
+                        sendRemovedNotification(port: removedPort)
+                    }
                 }
             }
         }
@@ -202,6 +211,16 @@ final class PortListViewModel: ObservableObject {
     }
 
     private var lastKnownPortInfo: [UInt16: PortInfo] = [:]
+
+    private func shouldNotify(for category: PortCategory) -> Bool {
+        switch category {
+        case .frontend, .backend: return settings.notifyLocalPorts
+        case .docker: return settings.notifyDockerPorts
+        case .system: return settings.notifySystemPorts
+        case .other: return settings.notifyOtherPorts
+        case .database: return settings.notifyLocalPorts
+        }
+    }
 
     private func sendNotification(for port: PortInfo) {
         let name = port.dockerContainer?.name ?? port.process.name

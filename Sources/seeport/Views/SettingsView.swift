@@ -5,12 +5,14 @@ import Sparkle
 
 enum SettingsTab: String, CaseIterable {
     case general = "General"
+    case notifications = "Notifications"
     case tools = "Tools"
     case about = "About"
 
     var icon: String {
         switch self {
         case .general: return "gearshape"
+        case .notifications: return "bell"
         case .tools: return "wrench.and.screwdriver"
         case .about: return "info.circle"
         }
@@ -19,6 +21,7 @@ enum SettingsTab: String, CaseIterable {
     var iconFilled: String {
         switch self {
         case .general: return "gearshape.fill"
+        case .notifications: return "bell.fill"
         case .tools: return "wrench.and.screwdriver.fill"
         case .about: return "info.circle.fill"
         }
@@ -50,6 +53,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     switch selectedTab {
                     case .general: generalTab
+                    case .notifications: notificationsTab
                     case .tools: toolsTab
                     case .about: aboutTab
                     }
@@ -108,13 +112,50 @@ struct SettingsView: View {
                 }
             }
 
-            // Notifications
-            flatSection("Notifications") {
-                flatToggleRow("New port detected", isOn: $settings.notifyNewPort)
+            // App
+            flatSection("App") {
+                flatToggleRow("Start at login", isOn: $settings.launchAtLogin)
                 flatDivider
-                flatToggleRow("Port closed detected", isOn: $settings.notifyRemovedPort)
-                flatDivider
+                Button(action: { NSApplication.shared.terminate(nil) }) {
+                    HStack {
+                        Text("Quit Seeport")
+                            .font(.system(size: 13))
+                            .foregroundColor(.red)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .hoverCursor()
+            }
+        }
+        .onChange(of: settings.autoRefreshEnabled) { _ in viewModel.applySettings() }
+        .onChange(of: settings.refreshInterval) { _ in viewModel.applySettings() }
+    }
 
+    // MARK: - Notifications Tab
+
+    private var notificationsTab: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            flatSection("Events") {
+                flatToggleRow("New port", isOn: $settings.notifyNewPort)
+                flatDivider
+                flatToggleRow("Closed port", isOn: $settings.notifyRemovedPort)
+            }
+
+            flatSection("Categories") {
+                flatToggleRow("Local", isOn: $settings.notifyLocalPorts)
+                flatDivider
+                flatToggleRow("Docker", isOn: $settings.notifyDockerPorts)
+                flatDivider
+                flatToggleRow("System", isOn: $settings.notifySystemPorts)
+                flatDivider
+                flatToggleRow("Other", isOn: $settings.notifyOtherPorts)
+            }
+
+            flatSection("Permission") {
                 HStack {
                     Text("Status")
                         .font(.system(size: 13))
@@ -150,27 +191,8 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
                 .hoverCursor()
             }
-
-            // App
-            flatSection("App") {
-                Button(action: { NSApplication.shared.terminate(nil) }) {
-                    HStack {
-                        Text("Quit Seeport")
-                            .font(.system(size: 13))
-                            .foregroundColor(.red)
-                        Spacer()
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .hoverCursor()
-            }
         }
         .onAppear { checkNotificationStatus() }
-        .onChange(of: settings.autoRefreshEnabled) { _ in viewModel.applySettings() }
-        .onChange(of: settings.refreshInterval) { _ in viewModel.applySettings() }
     }
 
     // MARK: - Tools Tab
