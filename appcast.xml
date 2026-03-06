@@ -6,6 +6,26 @@
         <description>Most recent updates for Seeport</description>
         <language>en</language>
         <item>
+            <title>Version 1.6</title>
+            <sparkle:version>1.6</sparkle:version>
+            <sparkle:shortVersionString>1.6</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <ul>
+                    <li>Fixed browser-open actions to respect the actual bound host instead of forcing localhost.</li>
+                    <li>Preserved Docker host binding addresses and disabled browser launching for non-TCP port mappings.</li>
+                    <li>Updated the app branding and bundle name to Seeport.</li>
+                </ul>
+            ]]></description>
+            <pubDate>Fri, 06 Mar 2026 10:55:40 +0000</pubDate>
+            <enclosure
+                url="https://github.com/clover4282/seeport/releases/download/v1.6/Seeport-v1.6.zip"
+                type="application/octet-stream"
+                sparkle:edSignature="Ix7qea0z0yden5e9wiMROuqyjbKXff2dzLJE9uGXFAMBa/9YPgQfQvvnEIowBO8UV7MSJw1hPt3KGbGA/GUhDg=="
+                length="5998755"
+            />
+        </item>
+        <item>
             <title>Version 1.5</title>
             <sparkle:version>1.5</sparkle:version>
             <sparkle:shortVersionString>1.5</sparkle:shortVersionString>
