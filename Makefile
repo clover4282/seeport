@@ -1,9 +1,11 @@
 SHELL       := /bin/zsh
-APP_NAME    := seeport
+APP_NAME    := Seeport
+TARGET_NAME := seeport
+SOURCE_DIR  := Sources/seeport
 BUNDLE      := .build/$(APP_NAME).app
 APP_DIR     := $(BUNDLE)/Contents
-EXECUTABLE  := .build/arm64-apple-macosx/debug/$(APP_NAME)
-SPARKLE_FW  := $(shell find .build -name "Sparkle.framework" -not -path "*/seeport.app/*" -print -quit 2>/dev/null)
+EXECUTABLE  := .build/arm64-apple-macosx/debug/$(TARGET_NAME)
+SPARKLE_FW  := $(shell find .build -name "Sparkle.framework" -not -path "*/$(APP_NAME).app/*" -print -quit 2>/dev/null)
 SIGN_TOOL   := .build/artifacts/sparkle/Sparkle/bin/sign_update
 
 .PHONY: build bundle run debug dev clean release deploy test-servers
@@ -17,8 +19,8 @@ bundle: build
 	@rm -rf $(BUNDLE)
 	@mkdir -p $(APP_DIR)/MacOS $(APP_DIR)/Resources $(APP_DIR)/Frameworks
 	@cp $(EXECUTABLE) $(APP_DIR)/MacOS/$(APP_NAME)
-	@cp Sources/$(APP_NAME)/Resources/Info.plist $(APP_DIR)/Info.plist
-	@cp Sources/$(APP_NAME)/Resources/AppIcon.icns $(APP_DIR)/Resources/AppIcon.icns 2>/dev/null || true
+	@cp $(SOURCE_DIR)/Resources/Info.plist $(APP_DIR)/Info.plist
+	@cp $(SOURCE_DIR)/Resources/AppIcon.icns $(APP_DIR)/Resources/AppIcon.icns 2>/dev/null || true
 	@if [ -n "$(SPARKLE_FW)" ]; then \
 		cp -R $(SPARKLE_FW) $(APP_DIR)/Frameworks/; \
 		echo "Sparkle.framework copied"; \
@@ -60,7 +62,7 @@ clean:
 # ── Release ────────────────────────────────────────────
 # Usage: make release VERSION=0.2
 
-VERSION ?= $(shell /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Sources/$(APP_NAME)/Resources/Info.plist)
+VERSION ?= $(shell /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" $(SOURCE_DIR)/Resources/Info.plist)
 
 release: bundle
 	@rm -f $(APP_NAME)-v$(VERSION).zip

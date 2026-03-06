@@ -5,13 +5,15 @@
     <key>CFBundleIdentifier</key>
     <string>com.seeport.app</string>
     <key>CFBundleName</key>
-    <string>seeport</string>
+    <string>Seeport</string>
     <key>CFBundleDisplayName</key>
-    <string>seeport</string>
+    <string>Seeport</string>
+    <key>CFBundleExecutable</key>
+    <string>Seeport</string>
     <key>CFBundleVersion</key>
-    <string>1.5</string>
+    <string>1.6</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.5</string>
+    <string>1.6</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundlePackageType</key>

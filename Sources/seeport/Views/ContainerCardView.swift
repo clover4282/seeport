@@ -36,7 +36,7 @@ struct ContainerCardView: View {
                 infoSection {
                     // Header
                     HStack {
-                        Text("Host Port")
+                        Text("Host Bind")
                             .frame(maxWidth: .infinity, alignment: .leading)
                         Text("Container Port")
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -135,26 +135,34 @@ private struct PortRowCell: View {
     let mapping: DockerContainer.PortMapping
     @State private var isHovering = false
 
+    private var isBrowsable: Bool {
+        mapping.proto.caseInsensitiveCompare("tcp") == .orderedSame
+    }
+
+    private var hostBindingLabel: String {
+        BrowserLauncher.label(address: mapping.hostAddress, port: mapping.hostPort)
+    }
+
     var body: some View {
         HStack {
-            Text(String(mapping.hostPort))
+            Text(verbatim: hostBindingLabel)
                 .font(.system(size: 13, weight: .medium, design: .monospaced))
-                .foregroundColor(isHovering ? .cyan.opacity(0.6) : .cyan)
-                .underline(isHovering)
+                .foregroundColor(isBrowsable ? (isHovering ? .cyan.opacity(0.6) : .cyan) : Constants.Colors.textSecondary)
+                .underline(isBrowsable && isHovering)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .onTapGesture {
-                    if let url = URL(string: "http://localhost:\(mapping.hostPort)") {
-                        NSWorkspace.shared.open(url)
-                    }
+                    guard isBrowsable else { return }
+                    BrowserLauncher.open(address: mapping.hostAddress, port: mapping.hostPort)
                 }
                 .onHover { hovering in
                     isHovering = hovering
-                    if hovering {
+                    if hovering && isBrowsable {
                         NSCursor.pointingHand.push()
-                    } else {
+                    } else if isBrowsable {
                         NSCursor.pop()
                     }
                 }
+                .help(isBrowsable ? "Open \(hostBindingLabel) in browser" : "Only TCP ports can be opened in a browser")
 
             CopyableValueText(value: String(mapping.containerPort))
                 .frame(maxWidth: .infinity, alignment: .leading)

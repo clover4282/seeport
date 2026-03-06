@@ -101,14 +101,13 @@ actor DockerService {
         for segment in segments {
             guard segment.contains("->") else { continue }
 
-            let arrowParts = segment.split(separator: "-", maxSplits: 1)
+            let arrowParts = segment.components(separatedBy: "->")
             guard arrowParts.count == 2 else { continue }
 
-            let hostPart = String(arrowParts[0])
-            let containerPart = String(arrowParts[1]).replacingOccurrences(of: ">", with: "")
+            let hostPart = arrowParts[0]
+            let containerPart = arrowParts[1]
 
-            // Extract host port (last component after :)
-            guard let hostPort = hostPart.split(separator: ":").last.flatMap({ UInt16($0) }) else { continue }
+            guard let (hostAddress, hostPort) = parseHostBinding(hostPart) else { continue }
 
             // Extract container port and protocol
             let containerComponents = containerPart.split(separator: "/")
@@ -116,6 +115,7 @@ actor DockerService {
             let proto = containerComponents.count > 1 ? String(containerComponents[1]) : "tcp"
 
             mappings.append(DockerContainer.PortMapping(
+                hostAddress: hostAddress,
                 hostPort: hostPort,
                 containerPort: containerPort,
                 proto: proto
@@ -128,6 +128,31 @@ actor DockerService {
             let key = "\(m.hostPort)-\(m.containerPort)-\(m.proto)"
             return seen.insert(key).inserted
         }
+    }
+
+    private func parseHostBinding(_ hostPart: String) -> (address: String, port: UInt16)? {
+        let trimmed = hostPart.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        if let separator = trimmed.lastIndex(of: ":") {
+            let portStart = trimmed.index(after: separator)
+            guard portStart < trimmed.endIndex, let port = UInt16(trimmed[portStart...]) else {
+                return nil
+            }
+
+            var address = String(trimmed[..<separator])
+            if address.hasPrefix("[") && address.hasSuffix("]") {
+                address.removeFirst()
+                address.removeLast()
+            }
+            if address.isEmpty {
+                address = "::"
+            }
+            return (address, port)
+        }
+
+        guard let port = UInt16(trimmed) else { return nil }
+        return ("0.0.0.0", port)
     }
 
     func enrichWithProjectPaths(_ containers: [DockerContainer]) async -> [DockerContainer] {

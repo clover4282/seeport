@@ -7,7 +7,7 @@ enum HTMLTemplate {
     <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>seeport</title>
+    <title>Seeport</title>
     <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -170,7 +170,7 @@ enum HTMLTemplate {
             items.forEach(p => {
                 const docker = p.docker ? `<span class="docker-badge">Docker</span>` : '';
                 const dockerDetail = p.docker ? ` &middot; ${p.docker.id.slice(0,8)}` : '';
-                html += `<div class="port-row" onclick="openPort(${p.port})"
+                html += `<div class="port-row" onclick="openPort('${esc(p.browserURL)}')"> 
                     <div class="port-num cat-${cl}">${p.port}</div>
                     <div class="port-info">
                         <div class="name-row"><span class="pname">${esc(p.process.name)}</span>${docker}</div>
@@ -207,7 +207,10 @@ enum HTMLTemplate {
         fetchPorts();
     }
 
-    function openPort(port) { window.open('http://localhost:' + port, '_blank'); }
+    function openPort(url) {
+        if (!url) return;
+        window.open(url, '_blank');
+    }
 
     function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 

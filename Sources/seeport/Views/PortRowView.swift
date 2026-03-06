@@ -26,9 +26,7 @@ struct PortRowView: View {
                 .frame(width: 80, alignment: .leading)
                 .minimumScaleFactor(0.8)
                 .onTapGesture {
-                    if let url = URL(string: "http://localhost:\(port.port)") {
-                        NSWorkspace.shared.open(url)
-                    }
+                    BrowserLauncher.open(address: port.address, port: port.port)
                 }
                 .onHover { hovering in
                     isPortHovering = hovering
@@ -179,15 +177,13 @@ struct PortRowView: View {
                     .foregroundColor(Constants.Colors.textPrimary)
                 Spacer()
                 Button(action: {
-                    if let url = URL(string: "http://localhost:\(port.port)") {
-                        NSWorkspace.shared.open(url)
-                    }
+                    BrowserLauncher.open(address: port.address, port: port.port)
                     showPopover = false
                 }) {
                     HStack(spacing: 4) {
                         Image(systemName: "safari")
                             .font(.system(size: 11))
-                        Text(verbatim: "localhost:\(port.port)")
+                        Text(verbatim: BrowserLauncher.label(address: port.address, port: port.port))
                             .font(.system(size: 11, weight: .medium))
                     }
                     .foregroundColor(.blue)
@@ -217,7 +213,10 @@ struct PortRowView: View {
                 detailRow("Protocol", "TCP")
                 if !container.ports.isEmpty {
                     ForEach(Array(container.ports.enumerated()), id: \.offset) { _, mapping in
-                        detailRow("Mapping", "\(mapping.hostPort) → \(mapping.containerPort)/\(mapping.proto)")
+                        detailRow(
+                            "Mapping",
+                            "\(BrowserLauncher.label(address: mapping.hostAddress, port: mapping.hostPort)) → \(mapping.containerPort)/\(mapping.proto)"
+                        )
                     }
                 }
 

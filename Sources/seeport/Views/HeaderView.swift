@@ -10,7 +10,7 @@ struct HeaderView: View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 0) {
-                    Text("see")
+                    Text("See")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(.white)
                     Text("port")

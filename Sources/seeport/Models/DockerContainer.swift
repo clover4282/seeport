@@ -9,6 +9,7 @@ struct DockerContainer: Identifiable, Hashable {
     var projectPath: String?
 
     struct PortMapping: Hashable {
+        let hostAddress: String
         let hostPort: UInt16
         let containerPort: UInt16
         let proto: String

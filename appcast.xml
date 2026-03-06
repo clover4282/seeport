@@ -6,6 +6,182 @@
         <description>Most recent updates for Seeport</description>
         <language>en</language>
         <item>
+            <title>Version 1.6</title>
+            <sparkle:version>1.6</sparkle:version>
+            <sparkle:shortVersionString>1.6</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <ul>
+                    <li>Fixed browser-open actions to respect the actual bound host instead of forcing localhost.</li>
+                    <li>Preserved Docker host binding addresses and disabled browser launching for non-TCP port mappings.</li>
+                    <li>Updated the app branding and bundle name to Seeport.</li>
+                </ul>
+            ]]></description>
+            <pubDate>Fri, 06 Mar 2026 10:55:40 +0000</pubDate>
+            <enclosure
+                url="https://github.com/clover4282/seeport/releases/download/v1.6/Seeport-v1.6.zip"
+                type="application/octet-stream"
+                sparkle:edSignature="Ix7qea0z0yden5e9wiMROuqyjbKXff2dzLJE9uGXFAMBa/9YPgQfQvvnEIowBO8UV7MSJw1hPt3KGbGA/GUhDg=="
+                length="5998755"
+            />
+        </item>
+        <item>
+            <title>Version 1.5</title>
+            <sparkle:version>1.5</sparkle:version>
+            <sparkle:shortVersionString>1.5</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <ul>
+                    <li>Port scanning replaced with libproc C API (zero shell forks)</li>
+                    <li>Lightweight refresh when popover is closed (port scan only)</li>
+                    <li>Batch docker inspect calls (N→1)</li>
+                    <li>Process icon lookup via proc_pidpath (no shell fork)</li>
+                    <li>Default refresh interval changed to 5s</li>
+                </ul>
+            ]]></description>
+            <pubDate>Thu, 06 Mar 2026 12:00:00 +0000</pubDate>
+            <enclosure
+                url="https://github.com/clover4282/seeport/releases/download/v1.5/seeport-v1.5.zip"
+                type="application/octet-stream"
+                sparkle:edSignature="oTSrmK7+OKS1mXzgZK1VvEd3GAb79MDrnF6d/p2wObvRpDDNT/P/eTpESKb38Ql/xBTF2g3mQmWymS4/CaxnDA=="
+                length="5992328"
+            />
+        </item>
+        <item>
+            <title>Version 1.4</title>
+            <sparkle:version>1.4</sparkle:version>
+            <sparkle:shortVersionString>1.4</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <ul>
+                    <li>Start at login support (auto-start on macOS startup)</li>
+                    <li>Notifications tab with per-category toggles (Local/Docker/System/Other)</li>
+                    <li>Disable background refresh when notification permission is off</li>
+                    <li>Refresh ports on popover open</li>
+                </ul>
+            ]]></description>
+            <pubDate>Thu, 06 Mar 2026 00:00:00 +0000</pubDate>
+            <enclosure
+                url="https://github.com/clover4282/seeport/releases/download/v1.4/seeport-v1.4.zip"
+                type="application/octet-stream"
+                sparkle:edSignature="faSsUfayTjMREgV1jLf87ampd5sSqvhRTPUGifMzoPObscytS745SMPoo4T2EwzQm89l7YNJMiOO/15E73T0AQ=="
+                length="5978541"
+            />
+        </item>
+        <item>
+            <title>Version 1.3</title>
+            <sparkle:version>1.3</sparkle:version>
+            <sparkle:shortVersionString>1.3</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <ul>
+                    <li>Energy optimization: reduced shell process spawning</li>
+                    <li>Cache Docker availability check (30s interval)</li>
+                    <li>Cache working directory lookups per PID</li>
+                    <li>Parallelize port scan and Docker container fetch</li>
+                    <li>Default refresh interval changed to 10s</li>
+                    <li>Refresh interval options: 5s/10s/20s/30s</li>
+                </ul>
+            ]]></description>
+            <pubDate>Wed, 05 Mar 2026 19:00:00 +0000</pubDate>
+            <enclosure
+                url="https://github.com/clover4282/seeport/releases/download/v1.3/seeport-v1.3.zip"
+                type="application/octet-stream"
+                sparkle:edSignature="1tHb5iuln02AnubYnnBcdGH+VpfkUWSYDs+PCjIWbmsJb2QrZ3l1CmRnG++rWdw6Y1vJIzr2plq7v2tvjvpVCQ=="
+                length="5947720"
+            />
+        </item>
+        <item>
+            <title>Version 1.2</title>
+            <sparkle:version>1.2</sparkle:version>
+            <sparkle:shortVersionString>1.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <ul>
+                    <li>Energy optimization: reduced shell process spawning</li>
+                    <li>Cache Docker availability check (30s interval)</li>
+                    <li>Cache working directory lookups per PID</li>
+                    <li>Parallelize port scan and Docker container fetch</li>
+                    <li>Default refresh interval changed to 10s</li>
+                    <li>Refresh interval options: 5s/10s/20s/30s</li>
+                </ul>
+            ]]></description>
+            <pubDate>Wed, 05 Mar 2026 18:00:00 +0000</pubDate>
+            <enclosure
+                url="https://github.com/clover4282/seeport/releases/download/v1.2/seeport-v1.2.zip"
+                type="application/octet-stream"
+                sparkle:edSignature="i0KdaTHEjh16nV7DRd7uul83GKw9B2OjeavRHk4CtBR9aN3weRvXaAREQ0uV8+qNh98tp7IImeDo3WWxIo7WAw=="
+                length="5947718"
+            />
+        </item>
+        <item>
+            <title>Version 1.1</title>
+            <sparkle:version>1.1</sparkle:version>
+            <sparkle:shortVersionString>1.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <ul>
+                    <li>Fix Docker detection in release builds</li>
+                    <li>Fix editor launch (VS Code etc.) in GUI context</li>
+                    <li>iTerm opens in new window instead of tab</li>
+                    <li>Smarter notification messages with process name and category</li>
+                    <li>Show localhost:port on browser button</li>
+                    <li>Favorite toggle moved to star icon in card header</li>
+                    <li>Direct link to Seeport notification settings</li>
+                    <li>Fix port number comma formatting</li>
+                </ul>
+            ]]></description>
+            <pubDate>Wed, 05 Mar 2026 18:00:00 +0000</pubDate>
+            <enclosure
+                url="https://github.com/clover4282/seeport/releases/download/v1.1/seeport-v1.1.zip"
+                type="application/octet-stream"
+                sparkle:edSignature="t8MYocc1rC31yV+r7YJjr0fmVkSMXp2xBc+qv0Gmahgm9hUcv2IQizbRtZTypbL5nl20fy+G0NR8vFFhyU+iCQ=="
+                length="5944598"
+            />
+        </item>
+        <item>
+            <title>Version 1.0</title>
+            <sparkle:version>1.0</sparkle:version>
+            <sparkle:shortVersionString>1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <ul>
+                    <li>In-app bug reporting via system email client</li>
+                    <li>Custom app icon</li>
+                    <li>Buy me a coffee button in header</li>
+                    <li>Updated settings and CLAUDE.md</li>
+                </ul>
+            ]]></description>
+            <pubDate>Wed, 05 Mar 2026 15:00:00 +0000</pubDate>
+            <enclosure
+                url="https://github.com/clover4282/seeport/releases/download/v1.0/seeport-v1.0.zip"
+                type="application/octet-stream"
+                sparkle:edSignature="hT9noxtUJ55aQBZa6LRLOXnVWWMkYIEghgXGM9LVYhH20x4OBB4rEzoONo2aZ5DPCS5y+6WEJ3vg4OpgHt+2CQ=="
+                length="5936652"
+            />
+        </item>
+        <item>
+            <title>Version 0.2</title>
+            <sparkle:version>0.2</sparkle:version>
+            <sparkle:shortVersionString>0.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <ul>
+                    <li>Makefile-based build system</li>
+                    <li>Settings window controller</li>
+                    <li>Custom editor and shell support</li>
+                    <li>README documentation</li>
+                </ul>
+            ]]></description>
+            <pubDate>Wed, 05 Mar 2026 12:00:00 +0000</pubDate>
+            <enclosure
+                url="https://github.com/clover4282/seeport/releases/download/v0.2/seeport-v0.2.zip"
+                type="application/octet-stream"
+                sparkle:edSignature="NcpMdFj4DckJUmyajmboxQv3Dz4I1S2Ua4YW9EOzw3SunQXCRfeefO5HUBO201OwNrvrWP2FxUWeuLESe/7sBQ=="
+                length="3953599"
+            />
+        </item>
+        <item>
             <title>Version 0.1</title>
             <sparkle:version>0.1</sparkle:version>
             <sparkle:shortVersionString>0.1</sparkle:shortVersionString>

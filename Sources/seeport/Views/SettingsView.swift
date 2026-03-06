@@ -354,7 +354,7 @@ struct SettingsView: View {
                     .cornerRadius(16)
 
                 HStack(spacing: 0) {
-                    Text("see").font(.system(size: 18, weight: .bold)).foregroundColor(.white)
+                    Text("See").font(.system(size: 18, weight: .bold)).foregroundColor(.white)
                     Text("port").font(.system(size: 18, weight: .bold)).foregroundColor(.blue)
                 }
 

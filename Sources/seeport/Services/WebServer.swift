@@ -19,7 +19,7 @@ final class WebServer {
                 self?.handleConnection(connection)
             }
             listener?.start(queue: .global(qos: .userInitiated))
-            print("seeport server running at http://localhost:\(port)")
+            print("Seeport server running at http://localhost:\(port)")
         } catch {
             print("Failed to start server: \(error)")
         }
@@ -134,8 +134,9 @@ final class WebServer {
             if let c = p.dockerContainer {
                 docker = "{\"id\":\"\(c.id)\",\"name\":\"\(c.name)\",\"image\":\"\(c.image)\"}"
             }
+            let browserURL = escapeJSON(BrowserLauncher.urlString(address: p.address, port: p.port) ?? "")
             return """
-            {"port":\(p.port),"address":"\(p.address)","process":{"pid":\(p.process.pid),"name":"\(escapeJSON(p.process.name))","user":"\(escapeJSON(p.process.user))"},"category":"\(p.category.rawValue)","isFavorite":\(p.isFavorite),"docker":\(docker)}
+            {"port":\(p.port),"address":"\(p.address)","browserURL":"\(browserURL)","process":{"pid":\(p.process.pid),"name":"\(escapeJSON(p.process.name))","user":"\(escapeJSON(p.process.user))"},"category":"\(p.category.rawValue)","isFavorite":\(p.isFavorite),"docker":\(docker)}
             """
         }
         return "[\(items.joined(separator: ","))]"

@@ -44,7 +44,7 @@ Seeport runs in your macOS menu bar and provides instant visibility into what's 
 
 **Download the latest release:**
 
-Download `seeport-v1.4.zip` from [Releases](https://github.com/clover4282/seeport/releases), unzip, and move `seeport.app` to `/Applications`.
+Download the latest `Seeport-v*.zip` from [Releases](https://github.com/clover4282/seeport/releases), unzip it, and move `Seeport.app` to `/Applications`.
 
 **Or build from source:**
 

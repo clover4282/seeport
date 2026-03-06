@@ -67,10 +67,8 @@ struct PortCardView: View {
             Spacer().frame(height: 10)
 
             HStack(spacing: 8) {
-                cardActionButton("localhost:\(port.port)", icon: "safari", color: .blue) {
-                    if let url = URL(string: "http://localhost:\(port.port)") {
-                        NSWorkspace.shared.open(url)
-                    }
+                cardActionButton(BrowserLauncher.label(address: port.address, port: port.port), icon: "safari", color: .blue) {
+                    BrowserLauncher.open(address: port.address, port: port.port)
                 }
 
                 if showKillConfirm {
