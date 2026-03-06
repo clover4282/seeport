@@ -25,8 +25,9 @@ Seeport runs in your macOS menu bar and provides instant visibility into what's 
 - Shell integration (iTerm2, Terminal, Warp, Alacritty, Kitty) — opens in new window
 - Open any port in browser with one click (`localhost:{port}`)
 - Optional HTTP server (port 7777) with web UI and JSON API
+- Start at login (auto-start on macOS startup)
 - Auto-refresh with configurable interval
-- Smart notifications with process name and category
+- Smart notifications with per-category control (Local / Docker / System / Other)
 - In-app bug reporting (via system email client)
 - Sparkle auto-update support
 
@@ -43,7 +44,7 @@ Seeport runs in your macOS menu bar and provides instant visibility into what's 
 
 **Download the latest release:**
 
-Download `seeport-v1.1.zip` from [Releases](https://github.com/clover4282/seeport/releases), unzip, and move `seeport.app` to `/Applications`.
+Download `seeport-v1.4.zip` from [Releases](https://github.com/clover4282/seeport/releases), unzip, and move `seeport.app` to `/Applications`.
 
 **Or build from source:**
 
@@ -79,19 +80,12 @@ Ports are automatically categorized:
 | 4 | Regex patterns | Process name matching |
 | 5 | Port ranges | 3000-3999 Frontend, 8000-8999 Backend, etc. |
 
-### Keyboard Shortcuts
-
-| Shortcut | Action |
-|----------|--------|
-| ⌘R | Refresh ports |
-| ⌘F | Focus search |
-| ⌘Q | Quit app |
-
 ### Settings
 
 Click the gear icon in the header:
 
-- **General** — Auto-refresh, refresh interval, notifications
+- **General** — Auto-refresh, refresh interval, start at login
+- **Notifications** — New/closed port events, per-category toggles (Local/Docker/System/Other)
 - **Tools** — Preferred editor and shell app
 - **About** — Version, bug report, check for updates
 
@@ -110,8 +104,8 @@ make clean    # Clean build artifacts
 ### Release
 
 ```bash
-make release VERSION=1.1   # Bundle → ZIP → Sparkle signature
-make deploy VERSION=1.1    # release + GitHub release
+make release VERSION=1.4   # Bundle → ZIP → Sparkle signature
+make deploy VERSION=1.4    # release + GitHub release
 ```
 
 ### Test Servers

@@ -14,9 +14,11 @@ make clean          # swift package clean + remove artifacts
 
 **Release:**
 ```bash
-make release VERSION=1.0   # Bundle → ZIP → Sparkle signature
-make deploy VERSION=1.0    # release + gh release create
+make release VERSION=1.4   # Bundle → ZIP → Sparkle signature
+make deploy VERSION=1.4    # release + gh release create
 ```
+
+After deploy, update `appcast.xml` on `gh-pages` branch with the Sparkle signature output.
 
 **Testing:** `make test-servers` starts Python HTTP servers on 8080/3000/9999 for port scanning verification.
 
@@ -40,6 +42,14 @@ Seeport is a **macOS menu bar app** (`MenuBarExtra` + `LSUIElement: true`) for m
 4. **ProcessService** — retrieves app icons via `NSRunningApplication`/`NSWorkspace`, gets working directory via `lsof -a -d cwd`, handles process killing
 5. **LicenseManager** — 30-day trial via `UserDefaults` first-launch date, Paddle API for activation/verification
 
+### Background Refresh
+
+Auto-refresh timer only runs when **both** `autoRefreshEnabled` is true **and** notification permission is authorized. When the popover opens, a manual refresh is always triggered via `onAppear`.
+
+### Notifications
+
+Per-category notification filtering via `SettingsManager`: `notifyLocalPorts` (Frontend/Backend/Database), `notifyDockerPorts`, `notifySystemPorts`, `notifyOtherPorts`. Event toggles: `notifyNewPort`, `notifyRemovedPort`.
+
 ### Web Server
 
 Optional HTTP server on port 7777 using Network framework (`NWListener`). Serves HTML UI at `/`, JSON API at `/api/ports`, and supports process kill/favorite toggle via POST.
@@ -57,10 +67,11 @@ All state uses `UserDefaults.standard` with `seeport.*` key prefix — favorites
 - **Dark theme** — background RGB(0.11, 0.11, 0.13) with blue/cyan accent throughout
 - **No external dependencies** — pure Swift/SwiftUI, no SPM packages (except Sparkle)
 - **Settings window** — `SettingsWindowController` manages a floating `NSWindow` with `NSHostingView`, not a SwiftUI WindowGroup
+- **Start at login** — `SMAppService.mainApp` (ServiceManagement framework), no helper app needed. First launch auto-registers.
 
 ## UI Structure
 
-`MainPopoverView` (420×600px popover) → HeaderView + SearchBarView + FilterTabsView (All/Local/Docker/Favorites) + PortListView (grouped by category) + StatusBarView. Settings is a separate floating NSWindow with 3 tabs (General/Tools/About).
+`MainPopoverView` (420×600px popover) → HeaderView + SearchBarView + FilterTabsView (All/Local/Docker/Favorites) + PortListView (grouped by category) + StatusBarView. Settings is a separate floating NSWindow with 4 tabs (General/Notifications/Tools/About).
 
 ## Bundle Info
 
