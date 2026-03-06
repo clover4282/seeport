@@ -6,6 +6,28 @@
         <description>Most recent updates for Seeport</description>
         <language>en</language>
         <item>
+            <title>Version 1.5</title>
+            <sparkle:version>1.5</sparkle:version>
+            <sparkle:shortVersionString>1.5</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <ul>
+                    <li>Port scanning replaced with libproc C API (zero shell forks)</li>
+                    <li>Lightweight refresh when popover is closed (port scan only)</li>
+                    <li>Batch docker inspect calls (N→1)</li>
+                    <li>Process icon lookup via proc_pidpath (no shell fork)</li>
+                    <li>Default refresh interval changed to 5s</li>
+                </ul>
+            ]]></description>
+            <pubDate>Thu, 06 Mar 2026 12:00:00 +0000</pubDate>
+            <enclosure
+                url="https://github.com/clover4282/seeport/releases/download/v1.5/seeport-v1.5.zip"
+                type="application/octet-stream"
+                sparkle:edSignature="oTSrmK7+OKS1mXzgZK1VvEd3GAb79MDrnF6d/p2wObvRpDDNT/P/eTpESKb38Ql/xBTF2g3mQmWymS4/CaxnDA=="
+                length="5992328"
+            />
+        </item>
+        <item>
             <title>Version 1.4</title>
             <sparkle:version>1.4</sparkle:version>
             <sparkle:shortVersionString>1.4</sparkle:shortVersionString>
