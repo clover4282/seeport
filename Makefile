@@ -9,7 +9,7 @@ EXECUTABLE  := .build/arm64-apple-macosx/debug/$(TARGET_NAME)
 SPARKLE_FW  := $(shell find .build -name "Sparkle.framework" -not -path "*/.app/*" -print -quit 2>/dev/null)
 SIGN_TOOL   := .build/artifacts/sparkle/Sparkle/bin/sign_update
 
-.PHONY: build bundle run debug dev clean release deploy test-servers
+.PHONY: build bundle run debug dev clean release deploy ship test-servers
 
 # ── Build ──────────────────────────────────────────────
 
@@ -98,6 +98,13 @@ deploy: release
 		--generate-notes
 	@echo "\nRelease v$(VERSION) published."
 	@echo "Remember to update gh-pages branch appcast.xml with new entry."
+
+# ── Ship (one-command deploy) ─────────────────────────
+# Usage: make ship              (auto-increment version)
+#        make ship VERSION=2.0  (specific version)
+
+ship:
+	@./scripts/ship.sh
 
 # ── Test Servers (sample HTTP servers for port testing) ─
 

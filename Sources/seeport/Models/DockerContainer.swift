@@ -22,6 +22,7 @@ struct DockerContainer: Identifiable, Hashable {
 extension PortCategory {
     var portTag: String {
         switch self {
+        case .favorites: return "Favorite"
         case .frontend: return "Frontend"
         case .backend: return "Backend"
         case .database: return "Database"
@@ -33,6 +34,7 @@ extension PortCategory {
 
     var tagColor: (r: Double, g: Double, b: Double) {
         switch self {
+        case .favorites: return (1.0, 0.84, 0.0)
         case .frontend: return (0.2, 0.5, 1.0)
         case .backend: return (0.1, 0.8, 0.4)
         case .database: return (1.0, 0.6, 0.0)

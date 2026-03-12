@@ -2,34 +2,34 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleIdentifier</key>
-    <string>com.seeport.dev</string>
-    <key>CFBundleName</key>
-    <string>Seeport Dev</string>
-    <key>CFBundleDisplayName</key>
-    <string>Seeport Dev</string>
-    <key>CFBundleExecutable</key>
-    <string>Seeport Dev</string>
-    <key>CFBundleVersion</key>
-    <string>1.7</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.7</string>
-    <key>CFBundleIconFile</key>
-    <string>AppIcon</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>LSUIElement</key>
-    <true/>
-    <key>SUFeedURL</key>
-    <string>https://clover4282.github.io/seeport/appcast.xml</string>
-    <key>SUEnableAutomaticChecks</key>
-    <true/>
-    <key>SUPublicEDKey</key>
-    <string>EOVhN+2Y4APnxRyU9MPkJPlJ+YgLQfbE9ORT74Zln5k=</string>
-    <key>NSAppTransportSecurity</key>
-    <dict>
-        <key>NSAllowsLocalNetworking</key>
-        <true/>
-    </dict>
+	<key>CFBundleDisplayName</key>
+	<string>Seeport Dev</string>
+	<key>CFBundleExecutable</key>
+	<string>Seeport Dev</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.seeport.dev</string>
+	<key>CFBundleName</key>
+	<string>Seeport Dev</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.8</string>
+	<key>CFBundleVersion</key>
+	<string>1.8</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://clover4282.github.io/seeport/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>EOVhN+2Y4APnxRyU9MPkJPlJ+YgLQfbE9ORT74Zln5k=</string>
 </dict>
 </plist>

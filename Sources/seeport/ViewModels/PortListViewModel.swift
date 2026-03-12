@@ -79,12 +79,23 @@ final class PortListViewModel: ObservableObject {
     }
 
     var groupedPorts: [(PortCategory, [PortInfo])] {
-        let grouped = Dictionary(grouping: filteredPorts, by: \.category)
+        let favoritePorts = filteredPorts.filter { $0.isFavorite }
+        let nonFavoritePorts = filteredPorts.filter { !$0.isFavorite }
+
+        var result: [(PortCategory, [PortInfo])] = []
+
+        if !favoritePorts.isEmpty {
+            result.append((.favorites, favoritePorts.sorted { $0.port < $1.port }))
+        }
+
+        let grouped = Dictionary(grouping: nonFavoritePorts, by: \.category)
         let order: [PortCategory] = [.backend, .docker, .system, .other]
-        return order.compactMap { category in
+        result += order.compactMap { category in
             guard let items = grouped[category], !items.isEmpty else { return nil }
             return (category, items.sorted { $0.port < $1.port })
         }
+
+        return result
     }
 
     func setPopoverVisible(_ visible: Bool) {
@@ -294,6 +305,7 @@ final class PortListViewModel: ObservableObject {
         case .system: return settings.notifySystemPorts
         case .other: return settings.notifyOtherPorts
         case .database: return settings.notifyLocalPorts
+        case .favorites: return false
         }
     }
 

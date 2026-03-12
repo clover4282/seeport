@@ -1,6 +1,7 @@
 import SwiftUI
 
 enum PortCategory: String, CaseIterable, Identifiable {
+    case favorites = "FAVORITES"
     case frontend = "FRONTEND"
     case backend = "LOCAL SERVER"
     case database = "DATABASE"
@@ -12,6 +13,7 @@ enum PortCategory: String, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
+        case .favorites: return "star.fill"
         case .frontend: return "globe"
         case .backend: return "server.rack"
         case .database: return "cylinder"
@@ -23,6 +25,7 @@ enum PortCategory: String, CaseIterable, Identifiable {
 
     var color: Color {
         switch self {
+        case .favorites: return .yellow
         case .frontend: return .blue
         case .backend: return .green
         case .database: return .orange
