@@ -298,34 +298,44 @@ struct PortRowView: View {
                 // Kill button (Docker / Local Server only)
                 if port.category == .docker || port.category == .backend {
                     if showKillConfirm {
-                        HStack(spacing: 0) {
-                            Text("Terminate this process?")
-                                .font(.system(size: 11))
-                                .foregroundColor(Constants.Colors.textSecondary)
-                            Spacer()
-                            Button(action: { showKillConfirm = false }) {
-                                Text("Cancel")
-                                    .font(.system(size: 11, weight: .medium))
+                        VStack(spacing: 4) {
+                            if let container = port.dockerContainer {
+                                let otherPorts = container.ports.filter { $0.hostPort != port.port }.map { String($0.hostPort) }
+                                if !otherPorts.isEmpty {
+                                    Text("Ports \(otherPorts.joined(separator: ", ")) will also stop")
+                                        .font(.system(size: 10))
+                                        .foregroundColor(Constants.Colors.danger.opacity(0.8))
+                                }
+                            }
+                            HStack(spacing: 0) {
+                                Text(port.dockerContainer != nil ? "Stop this container?" : "Terminate this process?")
+                                    .font(.system(size: 11))
                                     .foregroundColor(Constants.Colors.textSecondary)
+                                Spacer()
+                                Button(action: { showKillConfirm = false }) {
+                                    Text("Cancel")
+                                        .font(.system(size: 11, weight: .medium))
+                                        .foregroundColor(Constants.Colors.textSecondary)
+                                }
+                                .buttonStyle(.plain)
+                                .hoverCursor()
+                                .padding(.trailing, 8)
+                                Button(action: {
+                                    onKill()
+                                    showPopover = false
+                                    showKillConfirm = false
+                                }) {
+                                    Text(port.dockerContainer != nil ? "Stop" : "Kill")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 5)
+                                        .background(Constants.Colors.danger)
+                                        .cornerRadius(6)
+                                }
+                                .buttonStyle(.plain)
+                                .hoverCursor()
                             }
-                            .buttonStyle(.plain)
-                            .hoverCursor()
-                            .padding(.trailing, 8)
-                            Button(action: {
-                                onKill()
-                                showPopover = false
-                                showKillConfirm = false
-                            }) {
-                                Text("Kill")
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 5)
-                                    .background(Constants.Colors.danger)
-                                    .cornerRadius(6)
-                            }
-                            .buttonStyle(.plain)
-                            .hoverCursor()
                         }
                         .padding(8)
                         .background(Color.red.opacity(0.08))
@@ -333,9 +343,9 @@ struct PortRowView: View {
                     } else {
                         Button(action: { showKillConfirm = true }) {
                             HStack {
-                                Image(systemName: "xmark.circle.fill")
+                                Image(systemName: port.dockerContainer != nil ? "stop.circle.fill" : "xmark.circle.fill")
                                     .font(.system(size: 12))
-                                Text("Kill Process")
+                                Text(port.dockerContainer != nil ? "Stop Container" : "Kill Process")
                                     .font(.system(size: 11, weight: .medium))
                             }
                             .foregroundColor(Constants.Colors.danger)

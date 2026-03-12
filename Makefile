@@ -1,11 +1,12 @@
 SHELL       := /bin/zsh
 APP_NAME    := Seeport
+DEV_APP_NAME := Seeport Dev
 TARGET_NAME := seeport
 SOURCE_DIR  := Sources/seeport
-BUNDLE      := .build/$(APP_NAME).app
-APP_DIR     := $(BUNDLE)/Contents
+DEV_BUNDLE  := .build/$(DEV_APP_NAME).app
+REL_BUNDLE  := .build/$(APP_NAME).app
 EXECUTABLE  := .build/arm64-apple-macosx/debug/$(TARGET_NAME)
-SPARKLE_FW  := $(shell find .build -name "Sparkle.framework" -not -path "*/$(APP_NAME).app/*" -print -quit 2>/dev/null)
+SPARKLE_FW  := $(shell find .build -name "Sparkle.framework" -not -path "*/.app/*" -print -quit 2>/dev/null)
 SIGN_TOOL   := .build/artifacts/sparkle/Sparkle/bin/sign_update
 
 .PHONY: build bundle run debug dev clean release deploy test-servers
@@ -16,33 +17,33 @@ build:
 	swift build 2>&1
 
 bundle: build
-	@rm -rf $(BUNDLE)
-	@mkdir -p $(APP_DIR)/MacOS $(APP_DIR)/Resources $(APP_DIR)/Frameworks
-	@cp $(EXECUTABLE) $(APP_DIR)/MacOS/$(APP_NAME)
-	@cp $(SOURCE_DIR)/Resources/Info.plist $(APP_DIR)/Info.plist
-	@cp $(SOURCE_DIR)/Resources/AppIcon.icns $(APP_DIR)/Resources/AppIcon.icns 2>/dev/null || true
+	@rm -rf "$(DEV_BUNDLE)"
+	@mkdir -p "$(DEV_BUNDLE)/Contents/MacOS" "$(DEV_BUNDLE)/Contents/Resources" "$(DEV_BUNDLE)/Contents/Frameworks"
+	@cp $(EXECUTABLE) "$(DEV_BUNDLE)/Contents/MacOS/$(DEV_APP_NAME)"
+	@cp $(SOURCE_DIR)/Resources/Info.dev.plist "$(DEV_BUNDLE)/Contents/Info.plist"
+	@cp $(SOURCE_DIR)/Resources/AppIcon.icns "$(DEV_BUNDLE)/Contents/Resources/AppIcon.icns" 2>/dev/null || true
 	@if [ -n "$(SPARKLE_FW)" ]; then \
-		cp -R $(SPARKLE_FW) $(APP_DIR)/Frameworks/; \
+		cp -R "$(SPARKLE_FW)" "$(DEV_BUNDLE)/Contents/Frameworks/"; \
 		echo "Sparkle.framework copied"; \
 	else \
 		echo "Warning: Sparkle.framework not found"; \
 	fi
-	@install_name_tool -add_rpath @executable_path/../Frameworks $(APP_DIR)/MacOS/$(APP_NAME) 2>/dev/null || true
-	@codesign --force --deep --sign - $(BUNDLE)
-	@xattr -dr com.apple.quarantine $(BUNDLE) 2>/dev/null || true
-	@echo "App bundle: $(BUNDLE)"
+	@install_name_tool -add_rpath @executable_path/../Frameworks "$(DEV_BUNDLE)/Contents/MacOS/$(DEV_APP_NAME)" 2>/dev/null || true
+	@codesign --force --deep --sign - "$(DEV_BUNDLE)"
+	@xattr -dr com.apple.quarantine "$(DEV_BUNDLE)" 2>/dev/null || true
+	@echo "App bundle: $(DEV_BUNDLE)"
 
 # ── Run ────────────────────────────────────────────────
 
 run: bundle
-	@pkill -f "$(BUNDLE)" 2>/dev/null || true
-	@open $(BUNDLE)
+	@pkill -f "$(DEV_BUNDLE)" 2>/dev/null || true
+	@open "$(DEV_BUNDLE)"
 
 # ── Debug (run in foreground with stdout/stderr) ───────
 
 debug: bundle
-	@pkill -f "$(BUNDLE)" 2>/dev/null || true
-	$(APP_DIR)/MacOS/$(APP_NAME)
+	@pkill -f "$(DEV_BUNDLE)" 2>/dev/null || true
+	"$(DEV_BUNDLE)/Contents/MacOS/$(DEV_APP_NAME)"
 
 # ── Dev (watch & auto-rebuild) ─────────────────────────
 
@@ -57,14 +58,31 @@ dev: run
 
 clean:
 	swift package clean
-	rm -rf $(BUNDLE) *.zip
+	rm -rf "$(DEV_BUNDLE)" "$(REL_BUNDLE)" *.zip
 
 # ── Release ────────────────────────────────────────────
 # Usage: make release VERSION=0.2
 
 VERSION ?= $(shell /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" $(SOURCE_DIR)/Resources/Info.plist)
 
-release: bundle
+release-bundle: build
+	@rm -rf "$(REL_BUNDLE)"
+	@mkdir -p "$(REL_BUNDLE)/Contents/MacOS" "$(REL_BUNDLE)/Contents/Resources" "$(REL_BUNDLE)/Contents/Frameworks"
+	@cp $(EXECUTABLE) "$(REL_BUNDLE)/Contents/MacOS/$(APP_NAME)"
+	@cp $(SOURCE_DIR)/Resources/Info.plist "$(REL_BUNDLE)/Contents/Info.plist"
+	@cp $(SOURCE_DIR)/Resources/AppIcon.icns "$(REL_BUNDLE)/Contents/Resources/AppIcon.icns" 2>/dev/null || true
+	@if [ -n "$(SPARKLE_FW)" ]; then \
+		cp -R "$(SPARKLE_FW)" "$(REL_BUNDLE)/Contents/Frameworks/"; \
+		echo "Sparkle.framework copied"; \
+	else \
+		echo "Warning: Sparkle.framework not found"; \
+	fi
+	@install_name_tool -add_rpath @executable_path/../Frameworks "$(REL_BUNDLE)/Contents/MacOS/$(APP_NAME)" 2>/dev/null || true
+	@codesign --force --deep --sign - "$(REL_BUNDLE)"
+	@xattr -dr com.apple.quarantine "$(REL_BUNDLE)" 2>/dev/null || true
+	@echo "App bundle: $(REL_BUNDLE)"
+
+release: release-bundle
 	@rm -f $(APP_NAME)-v$(VERSION).zip
 	@cd .build && zip -r ../$(APP_NAME)-v$(VERSION).zip $(APP_NAME).app -q
 	@echo "Created $(APP_NAME)-v$(VERSION).zip"

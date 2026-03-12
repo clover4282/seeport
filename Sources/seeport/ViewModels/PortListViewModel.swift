@@ -420,9 +420,13 @@ final class PortListViewModel: ObservableObject {
     }
 
     func killProcess(_ port: PortInfo) async {
-        let success = await ProcessService.kill(pid: port.process.pid)
+        let success: Bool
+        if let container = port.dockerContainer {
+            success = await dockerService.stop(id: container.id)
+        } else {
+            success = await ProcessService.kill(pid: port.process.pid)
+        }
         if success {
-            // Brief delay then refresh
             try? await Task.sleep(nanoseconds: 500_000_000)
             await refresh()
         }
