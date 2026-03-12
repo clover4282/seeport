@@ -6,6 +6,26 @@
         <description>Most recent updates for Seeport</description>
         <language>en</language>
         <item>
+            <title>Version 1.7</title>
+            <sparkle:version>1.7</sparkle:version>
+            <sparkle:shortVersionString>1.7</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <ul>
+                    <li>Docker ports now use "docker stop" instead of kill -9 (fixes OrbStack crash)</li>
+                    <li>Show affected ports warning when stopping a multi-port container</li>
+                    <li>Separate dev/release app bundles (Seeport Dev vs Seeport)</li>
+                </ul>
+            ]]></description>
+            <pubDate>Thu, 12 Mar 2026 11:00:00 +0000</pubDate>
+            <enclosure
+                url="https://github.com/clover4282/seeport/releases/download/v1.7/Seeport-v1.7.zip"
+                type="application/octet-stream"
+                sparkle:edSignature="Fm3sRfiGAQRQhRjgXi6f+56EH0GKd5/QbPpkKBMwDwNHXonwDeFDC11IZjj+qqEi6yfZ7k6s1vwiyKlK7qS5Dg=="
+                length="6004987"
+            />
+        </item>
+        <item>
             <title>Version 1.6</title>
             <sparkle:version>1.6</sparkle:version>
             <sparkle:shortVersionString>1.6</sparkle:shortVersionString>
