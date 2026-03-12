@@ -6,6 +6,24 @@
         <description>Most recent updates for Seeport</description>
         <language>en</language>
         <item>
+            <title>Version 1.8</title>
+            <sparkle:version>1.8</sparkle:version>
+            <sparkle:shortVersionString>1.8</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <ul>
+                    <li>Release v1.7: safe Docker stop and dev/release app separation</li>
+                </ul>
+            ]]></description>
+            <pubDate>목, 12  3월 2026 03:58:52 +0000</pubDate>
+            <enclosure
+                url="https://github.com/clover4282/seeport/releases/download/v1.8/Seeport-v1.8.zip"
+                type="application/octet-stream"
+                sparkle:edSignature="OZvOIl+0eKC4z+66cBJMbyRb3Z4GpNpCEpWUukESmPRWzHv1jZRuhkjm2975QfAhykGsQj6QCopuHeV/WdTtDw=="
+                length="6007353"
+            />
+        </item>
+        <item>
             <title>Version 1.6</title>
             <sparkle:version>1.6</sparkle:version>
             <sparkle:shortVersionString>1.6</sparkle:shortVersionString>
