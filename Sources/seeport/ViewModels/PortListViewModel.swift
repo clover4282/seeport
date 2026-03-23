@@ -172,7 +172,7 @@ final class PortListViewModel: ObservableObject {
                 let removedPorts = knownPorts.subtracting(currentPorts)
                 for removedPort in removedPorts {
                     let category = lastKnownPortInfo[removedPort]?.category
-                    if category == nil || shouldNotify(for: category!) {
+                    if let category = category, shouldNotify(for: category) {
                         sendRemovedNotification(port: removedPort)
                     }
                 }
@@ -278,7 +278,7 @@ final class PortListViewModel: ObservableObject {
                 let removedPorts = knownPorts.subtracting(currentPorts)
                 for removedPort in removedPorts {
                     let category = lastKnownPortInfo[removedPort]?.category
-                    if category == nil || shouldNotify(for: category!) {
+                    if let category = category, shouldNotify(for: category) {
                         sendRemovedNotification(port: removedPort)
                     }
                 }
