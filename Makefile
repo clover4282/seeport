@@ -65,7 +65,14 @@ clean:
 
 VERSION ?= $(shell /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" $(SOURCE_DIR)/Resources/Info.plist)
 
-release-bundle: build
+bump-version:
+	@/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $(VERSION)" $(SOURCE_DIR)/Resources/Info.plist
+	@/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $(VERSION)" $(SOURCE_DIR)/Resources/Info.plist
+	@/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $(VERSION)" $(SOURCE_DIR)/Resources/Info.dev.plist
+	@/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $(VERSION)" $(SOURCE_DIR)/Resources/Info.dev.plist
+	@echo "Version bumped to $(VERSION)"
+
+release-bundle: bump-version build
 	@rm -rf "$(REL_BUNDLE)"
 	@mkdir -p "$(REL_BUNDLE)/Contents/MacOS" "$(REL_BUNDLE)/Contents/Resources" "$(REL_BUNDLE)/Contents/Frameworks"
 	@cp $(EXECUTABLE) "$(REL_BUNDLE)/Contents/MacOS/$(APP_NAME)"
