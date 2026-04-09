@@ -35,6 +35,13 @@ enum PaddleError: Error, LocalizedError {
 
 enum PaddleService {
 
+    private static func formEncode(_ params: [String: String]) -> Data? {
+        var components = URLComponents()
+        components.queryItems = params.map { URLQueryItem(name: $0.key, value: $0.value) }
+        // URLComponents percent-encodes the query; strip the leading "?"
+        return components.percentEncodedQuery?.data(using: .utf8)
+    }
+
     /// Activate and verify a license key via Paddle API
     static func activate(licenseKey: String) async -> Result<String, PaddleError> {
         // Skip API call if not configured
@@ -60,10 +67,7 @@ enum PaddleService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        request.httpBody = params
-            .map { "\($0.key)=\($0.value)" }
-            .joined(separator: "&")
-            .data(using: .utf8)
+        request.httpBody = Self.formEncode(params)
         request.timeoutInterval = 10
 
         do {
@@ -109,10 +113,7 @@ enum PaddleService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        request.httpBody = params
-            .map { "\($0.key)=\($0.value)" }
-            .joined(separator: "&")
-            .data(using: .utf8)
+        request.httpBody = Self.formEncode(params)
         request.timeoutInterval = 10
 
         do {

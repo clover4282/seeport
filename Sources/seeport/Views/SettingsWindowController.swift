@@ -7,7 +7,6 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     func open(viewModel: PortListViewModel) {
         if let existing = window {
-            existing.contentView = NSHostingView(rootView: SettingsView(viewModel: viewModel))
             existing.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return

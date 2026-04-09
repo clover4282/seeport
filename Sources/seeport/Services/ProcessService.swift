@@ -30,6 +30,16 @@ enum ProcessService {
         return NSWorkspace.shared.icon(forFile: "/usr/bin/env")
     }
 
+    /// Load icon off the main thread, returning nil if unavailable.
+    static func loadIconAsync(for pid: Int32) async -> NSImage? {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let img = icon(for: pid)
+                continuation.resume(returning: img)
+            }
+        }
+    }
+
     private static func getExecutablePath(pid: Int32) -> String? {
         let maxPathSize = 4 * Int(MAXPATHLEN)
         var pathBuffer = [CChar](repeating: 0, count: maxPathSize)
@@ -39,7 +49,9 @@ enum ProcessService {
     }
 
     static func getWorkingDirectory(pid: Int32) async -> String? {
-        let result = await ShellExecutor.runAsync("lsof -a -d cwd -p \(pid) -F n 2>/dev/null")
+        let result = await ShellExecutor.runDirectAsync(
+            "/usr/bin/lsof", arguments: ["-a", "-d", "cwd", "-p", "\(pid)", "-F", "n"]
+        )
         guard result.exitCode == 0 else { return nil }
         for line in result.output.split(separator: "\n") {
             let s = String(line)
@@ -54,12 +66,13 @@ enum ProcessService {
     }
 
     static func kill(pid: Int32) async -> Bool {
-        let result = await ShellExecutor.runAsync("kill -9 \(pid) 2>/dev/null")
-        return result.exitCode == 0
+        Darwin.kill(pid, SIGKILL) == 0
     }
 
     static func getUserForPID(_ pid: Int32) async -> String {
-        let result = await ShellExecutor.runAsync("ps -o user= -p \(pid) 2>/dev/null")
+        let result = await ShellExecutor.runDirectAsync(
+            "/bin/ps", arguments: ["-o", "user=", "-p", "\(pid)"]
+        )
         return result.output.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

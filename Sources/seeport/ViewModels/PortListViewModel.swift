@@ -26,6 +26,7 @@ final class PortListViewModel: ObservableObject {
     private let dockerService = DockerService()
     private var timer: Timer?
     private var knownPorts: Set<UInt16> = []
+    private var lastKnownPortInfo: [UInt16: PortInfo] = [:]
     private var isFirstScan = true
     private var workingDirCache: [Int32: String?] = [:]
     private(set) var isPopoverVisible = false
@@ -50,6 +51,8 @@ final class PortListViewModel: ObservableObject {
             }
         }
     }
+
+    // MARK: - Filtering
 
     var filteredPorts: [PortInfo] {
         var result = ports
@@ -78,6 +81,17 @@ final class PortListViewModel: ObservableObject {
         return result
     }
 
+    var filteredDockerContainers: [DockerContainer] {
+        guard !searchText.isEmpty else { return dockerContainers }
+        let query = searchText.lowercased()
+        return dockerContainers.filter { c in
+            c.name.lowercased().contains(query) ||
+            c.image.lowercased().contains(query) ||
+            c.id.lowercased().contains(query) ||
+            c.ports.contains { String($0.hostPort).contains(query) }
+        }
+    }
+
     var groupedPorts: [(PortCategory, [PortInfo])] {
         let favoritePorts = filteredPorts.filter { $0.isFavorite }
         let nonFavoritePorts = filteredPorts.filter { !$0.isFavorite }
@@ -89,7 +103,7 @@ final class PortListViewModel: ObservableObject {
         }
 
         let grouped = Dictionary(grouping: nonFavoritePorts, by: \.category)
-        let order: [PortCategory] = [.backend, .docker, .system, .other]
+        let order: [PortCategory] = [.frontend, .backend, .database, .docker, .system, .other]
         result += order.compactMap { category in
             guard let items = grouped[category], !items.isEmpty else { return nil }
             return (category, items.sorted { $0.port < $1.port })
@@ -97,6 +111,8 @@ final class PortListViewModel: ObservableObject {
 
         return result
     }
+
+    // MARK: - Popover & Timer
 
     func setPopoverVisible(_ visible: Bool) {
         isPopoverVisible = visible
@@ -134,12 +150,12 @@ final class PortListViewModel: ObservableObject {
         timer = nil
     }
 
+    // MARK: - Scanning
+
     /// Lightweight refresh: port scan only (no Docker, no working dir, no icons).
-    /// Used when popover is closed to minimize energy usage.
     func lightRefresh() async {
         let scannedPorts = await portScanner.scan()
 
-        // Apply categories without Docker enrichment
         let results = scannedPorts.map { port -> PortInfo in
             let category = CategoryEngine.categorize(
                 port: port.port,
@@ -156,32 +172,9 @@ final class PortListViewModel: ObservableObject {
             )
         }
 
-        // Detect new and removed ports for notifications
         let currentPorts = Set(results.map(\.port))
-        if !isFirstScan {
-            if settings.notifyNewPort {
-                let newPorts = currentPorts.subtracting(knownPorts)
-                for newPort in newPorts {
-                    if let info = results.first(where: { $0.port == newPort }),
-                       shouldNotify(for: info.category) {
-                        sendNotification(for: info)
-                    }
-                }
-            }
-            if settings.notifyRemovedPort {
-                let removedPorts = knownPorts.subtracting(currentPorts)
-                for removedPort in removedPorts {
-                    let category = lastKnownPortInfo[removedPort]?.category
-                    if let category = category, shouldNotify(for: category) {
-                        sendRemovedNotification(port: removedPort)
-                    }
-                }
-            }
-        }
-        knownPorts = currentPorts
-        isFirstScan = false
+        processPortNotifications(currentPorts: currentPorts, results: results)
 
-        // Update minimal published state
         ports = results.sorted { $0.port < $1.port }
         portCount = ports.count
         lastScanTime = Date()
@@ -201,43 +194,11 @@ final class PortListViewModel: ObservableObject {
         dockerContainers_ = await dockerService.enrichWithProjectPaths(dockerContainers_)
 
         // Enrich with Docker info and categories
-        results = results.map { port in
-            var updated = port
-            let container = dockerContainers_.first { c in
-                c.ports.contains { $0.hostPort == port.port }
-            }
-            updated.dockerContainer = container
-            let isDocker = container != nil
-            let category = CategoryEngine.categorize(
-                port: port.port,
-                command: port.process.name,
-                isDocker: isDocker,
-                dockerImage: container?.image
-            )
-            updated = PortInfo(
-                port: updated.port,
-                process: updated.process,
-                category: category,
-                address: updated.address,
-                isFavorite: Favorites.isFavorite(updated.port),
-                dockerContainer: updated.dockerContainer
-            )
-            return updated
-        }
+        results = enrichWithDocker(results, containers: dockerContainers_)
 
-        // Enrich local (non-Docker) ports with working directory (cached)
-        let activePidsSet = Set(results.map(\.process.pid))
-        workingDirCache = workingDirCache.filter { activePidsSet.contains($0.key) }
-        for i in results.indices where results[i].dockerContainer == nil && results[i].category != .system {
-            let pid = results[i].process.pid
-            if let cached = workingDirCache[pid] {
-                results[i].projectPath = cached
-            } else {
-                let path = await ProcessService.getWorkingDirectory(pid: pid)
-                workingDirCache[pid] = path
-                results[i].projectPath = path
-            }
-        }
+        // Enrich local (non-Docker) ports with working directory (parallel)
+        results = await enrichWithWorkingDirectories(results)
+
         // Propagate Docker project path to port
         for i in results.indices {
             if let containerPath = results[i].dockerContainer?.projectPath {
@@ -250,25 +211,123 @@ final class PortListViewModel: ObservableObject {
         portCount = ports.count
         lastScanTime = Date()
 
-        // Cache process icons
+        // Load process icons off the main thread
         if settings.showProcessIcons {
-            for port in ports {
-                let pid = port.process.pid
-                if processIcons[pid] == nil {
-                    processIcons[pid] = ProcessService.icon(for: pid)
-                }
-            }
+            await updateIconCache(for: ports)
         }
-        // Remove stale icons
+        let activePidsSet = Set(ports.map(\.process.pid))
         processIcons = processIcons.filter { activePidsSet.contains($0.key) }
 
         // Detect new and removed ports
         let currentPorts = Set(ports.map(\.port))
+        processPortNotifications(currentPorts: currentPorts, results: ports)
+
+        isScanning = false
+    }
+
+    // MARK: - Enrichment Helpers
+
+    private func enrichWithDocker(_ ports: [PortInfo], containers: [DockerContainer]) -> [PortInfo] {
+        ports.map { port in
+            let container = containers.first { c in
+                c.ports.contains { $0.hostPort == port.port }
+            }
+            let isDocker = container != nil
+            let category = CategoryEngine.categorize(
+                port: port.port,
+                command: port.process.name,
+                isDocker: isDocker,
+                dockerImage: container?.image
+            )
+            return PortInfo(
+                port: port.port,
+                process: port.process,
+                category: category,
+                address: port.address,
+                isFavorite: Favorites.isFavorite(port.port),
+                dockerContainer: container
+            )
+        }
+    }
+
+    private func enrichWithWorkingDirectories(_ results: [PortInfo]) async -> [PortInfo] {
+        var updated = results
+        let activePidsSet = Set(results.map(\.process.pid))
+        workingDirCache = workingDirCache.filter { activePidsSet.contains($0.key) }
+
+        // Collect uncached PIDs
+        var uncachedIndices: [Int] = []
+        for i in updated.indices where updated[i].dockerContainer == nil && updated[i].category != .system {
+            let pid = updated[i].process.pid
+            if let cached = workingDirCache[pid] {
+                updated[i].projectPath = cached
+            } else {
+                uncachedIndices.append(i)
+            }
+        }
+
+        // Fetch uncached working directories in parallel
+        if !uncachedIndices.isEmpty {
+            let pidsToFetch = uncachedIndices.map { updated[$0].process.pid }
+            let paths = await withTaskGroup(of: (Int32, String?).self, returning: [(Int32, String?)].self) { group in
+                for pid in pidsToFetch {
+                    group.addTask {
+                        let path = await ProcessService.getWorkingDirectory(pid: pid)
+                        return (pid, path)
+                    }
+                }
+                var collected: [(Int32, String?)] = []
+                for await result in group {
+                    collected.append(result)
+                }
+                return collected
+            }
+
+            for (pid, path) in paths {
+                workingDirCache[pid] = path
+            }
+            for i in uncachedIndices {
+                let pid = updated[i].process.pid
+                updated[i].projectPath = workingDirCache[pid] ?? nil
+            }
+        }
+
+        return updated
+    }
+
+    private func updateIconCache(for ports: [PortInfo]) async {
+        let newPids = ports.map(\.process.pid).filter { processIcons[$0] == nil }
+        guard !newPids.isEmpty else { return }
+
+        let icons = await withTaskGroup(of: (Int32, NSImage?).self, returning: [(Int32, NSImage?)].self) { group in
+            for pid in newPids {
+                group.addTask {
+                    let icon = await ProcessService.loadIconAsync(for: pid)
+                    return (pid, icon)
+                }
+            }
+            var collected: [(Int32, NSImage?)] = []
+            for await result in group {
+                collected.append(result)
+            }
+            return collected
+        }
+
+        for (pid, icon) in icons {
+            if let icon {
+                processIcons[pid] = icon
+            }
+        }
+    }
+
+    // MARK: - Notifications
+
+    private func processPortNotifications(currentPorts: Set<UInt16>, results: [PortInfo]) {
         if !isFirstScan {
             if settings.notifyNewPort {
                 let newPorts = currentPorts.subtracting(knownPorts)
                 for newPort in newPorts {
-                    if let info = ports.first(where: { $0.port == newPort }),
+                    if let info = results.first(where: { $0.port == newPort }),
                        shouldNotify(for: info.category) {
                         sendNotification(for: info)
                     }
@@ -278,25 +337,19 @@ final class PortListViewModel: ObservableObject {
                 let removedPorts = knownPorts.subtracting(currentPorts)
                 for removedPort in removedPorts {
                     let category = lastKnownPortInfo[removedPort]?.category
-                    if let category = category, shouldNotify(for: category) {
+                    if let category, shouldNotify(for: category) {
                         sendRemovedNotification(port: removedPort)
                     }
                 }
             }
         }
+        // Update tracking state
+        for info in results {
+            lastKnownPortInfo[info.port] = info
+        }
         knownPorts = currentPorts
         isFirstScan = false
-        isScanning = false
     }
-
-    func toggleFavorite(_ port: PortInfo) {
-        let newState = Favorites.toggle(port.port)
-        if let index = ports.firstIndex(where: { $0.port == port.port && $0.process.pid == port.process.pid }) {
-            ports[index].isFavorite = newState
-        }
-    }
-
-    private var lastKnownPortInfo: [UInt16: PortInfo] = [:]
 
     private func shouldNotify(for category: PortCategory) -> Bool {
         switch category {
@@ -317,13 +370,12 @@ final class PortListViewModel: ObservableObject {
         content.body = "localhost:\(port.port) is now listening (\(tag))"
         content.sound = .default
 
-        // Attach process icon
-        if let icon = processIcons[port.process.pid] ?? ProcessService.iconOrNil(for: port.process.pid),
-           let attachment = saveIconAttachment(icon: icon, pid: port.process.pid) {
-            content.attachments = [attachment]
+        // Attach process icon (async-safe: write in background)
+        if let icon = processIcons[port.process.pid] ?? ProcessService.iconOrNil(for: port.process.pid) {
+            if let attachment = saveIconAttachment(icon: icon, pid: port.process.pid) {
+                content.attachments = [attachment]
+            }
         }
-
-        lastKnownPortInfo[port.port] = port
 
         let request = UNNotificationRequest(
             identifier: "seeport.newport.\(port.port)",
@@ -362,13 +414,24 @@ final class PortListViewModel: ObservableObject {
               let png = bitmap.representation(using: .png, properties: [:]) else { return nil }
         do {
             try png.write(to: tmpURL)
-            return try UNNotificationAttachment(
+            let attachment = try UNNotificationAttachment(
                 identifier: "icon_\(pid)",
                 url: tmpURL,
                 options: [UNNotificationAttachmentOptionsTypeHintKey: "public.png"]
             )
+            // UNNotificationAttachment moves the file; no manual cleanup needed
+            return attachment
         } catch {
             return nil
+        }
+    }
+
+    // MARK: - Actions
+
+    func toggleFavorite(_ port: PortInfo) {
+        let newState = Favorites.toggle(port.port)
+        if let index = ports.firstIndex(where: { $0.port == port.port && $0.process.pid == port.process.pid }) {
+            ports[index].isFavorite = newState
         }
     }
 

@@ -35,24 +35,18 @@ actor DockerService {
             isAvailable = true
             return
         }
-        // Fallback: try PATH lookup (works when launched from terminal)
-        let result = await ShellExecutor.runAsync("which docker 2>/dev/null")
-        if result.exitCode == 0 {
-            let path = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !path.isEmpty {
-                dockerPath = path
-                isAvailable = true
-                return
-            }
-        }
         isAvailable = false
+    }
+
+    private func isValidContainerId(_ id: String) -> Bool {
+        !id.isEmpty && id.allSatisfy { $0.isHexDigit }
     }
 
     func fetchContainers() async -> [DockerContainer] {
         guard isAvailable else { return [] }
 
-        let result = await ShellExecutor.runAsync(
-            "\(dockerPath) ps --format '{{.ID}}\\t{{.Names}}\\t{{.Ports}}\\t{{.Image}}\\t{{.Status}}' 2>/dev/null"
+        let result = await ShellExecutor.runDirectAsync(
+            dockerPath, arguments: ["ps", "--format", "{{.ID}}\t{{.Names}}\t{{.Ports}}\t{{.Image}}\t{{.Status}}"]
         )
         guard result.exitCode == 0 else { return [] }
         return parse(result.output)
@@ -96,6 +90,7 @@ actor DockerService {
         var mappings: [DockerContainer.PortMapping] = []
 
         // Format: 0.0.0.0:8080->80/tcp, :::8080->80/tcp
+        // Range:  0.0.0.0:18000-18001->18000-18001/tcp
         let segments = portsStr.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
 
         for segment in segments {
@@ -107,19 +102,26 @@ actor DockerService {
             let hostPart = arrowParts[0]
             let containerPart = arrowParts[1]
 
-            guard let (hostAddress, hostPort) = parseHostBinding(hostPart) else { continue }
-
-            // Extract container port and protocol
+            // Extract protocol
             let containerComponents = containerPart.split(separator: "/")
-            guard let containerPort = containerComponents.first.flatMap({ UInt16($0) }) else { continue }
             let proto = containerComponents.count > 1 ? String(containerComponents[1]) : "tcp"
+            let containerPortStr = String(containerComponents.first ?? "")
 
-            mappings.append(DockerContainer.PortMapping(
-                hostAddress: hostAddress,
-                hostPort: hostPort,
-                containerPort: containerPort,
-                proto: proto
-            ))
+            let hostBindings = parseHostBinding(hostPart)
+            let containerPorts = parsePortOrRange(containerPortStr)
+
+            guard !hostBindings.isEmpty, !containerPorts.isEmpty else { continue }
+
+            // Pair host ports with container ports
+            for (idx, (hostAddress, hostPort)) in hostBindings.enumerated() {
+                let containerPort = idx < containerPorts.count ? containerPorts[idx] : containerPorts.last!
+                mappings.append(DockerContainer.PortMapping(
+                    hostAddress: hostAddress,
+                    hostPort: hostPort,
+                    containerPort: containerPort,
+                    proto: proto
+                ))
+            }
         }
 
         // Deduplicate (IPv4 + IPv6 both show up)
@@ -130,15 +132,13 @@ actor DockerService {
         }
     }
 
-    private func parseHostBinding(_ hostPart: String) -> (address: String, port: UInt16)? {
+    private func parseHostBinding(_ hostPart: String) -> [(address: String, port: UInt16)] {
         let trimmed = hostPart.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
+        guard !trimmed.isEmpty else { return [] }
 
         if let separator = trimmed.lastIndex(of: ":") {
             let portStart = trimmed.index(after: separator)
-            guard portStart < trimmed.endIndex, let port = UInt16(trimmed[portStart...]) else {
-                return nil
-            }
+            guard portStart < trimmed.endIndex else { return [] }
 
             var address = String(trimmed[..<separator])
             if address.hasPrefix("[") && address.hasSuffix("]") {
@@ -148,21 +148,39 @@ actor DockerService {
             if address.isEmpty {
                 address = "::"
             }
-            return (address, port)
+
+            let ports = parsePortOrRange(String(trimmed[portStart...]))
+            return ports.map { (address, $0) }
         }
 
-        guard let port = UInt16(trimmed) else { return nil }
-        return ("0.0.0.0", port)
+        let ports = parsePortOrRange(trimmed)
+        return ports.map { ("0.0.0.0", $0) }
+    }
+
+    private func parsePortOrRange(_ str: String) -> [UInt16] {
+        if let port = UInt16(str) {
+            return [port]
+        }
+        // Handle range: "18000-18001"
+        let parts = str.split(separator: "-", maxSplits: 1)
+        guard parts.count == 2,
+              let start = UInt16(parts[0]),
+              let end = UInt16(parts[1]),
+              start <= end,
+              end - start < 100 // safety limit
+        else { return [] }
+        return Array(start...end)
     }
 
     func enrichWithProjectPaths(_ containers: [DockerContainer]) async -> [DockerContainer] {
         guard !containers.isEmpty else { return containers }
 
         // Batch: single docker inspect call for all containers
-        let ids = containers.map(\.id).joined(separator: " ")
-        let result = await ShellExecutor.runAsync(
-            "\(dockerPath) inspect --format '{{.Id}}\\t{{range .Mounts}}{{if eq .Type \"bind\"}}{{.Source}}{{\"\\n\"}}{{end}}{{end}}' \(ids) 2>/dev/null"
-        )
+        let validIds = containers.map(\.id).filter { isValidContainerId($0) }
+        guard !validIds.isEmpty else { return containers }
+        var args = ["inspect", "--format", "{{.Id}}\t{{range .Mounts}}{{if eq .Type \"bind\"}}{{.Source}}{{\"\n\"}}{{end}}{{end}}"]
+        args.append(contentsOf: validIds)
+        let result = await ShellExecutor.runDirectAsync(dockerPath, arguments: args)
 
         // Parse batch output: each container's output starts with full ID + tab
         var pathMap: [String: String] = [:]
@@ -204,17 +222,20 @@ actor DockerService {
     }
 
     func stop(id: String) async -> Bool {
-        let result = await ShellExecutor.runAsync("\(dockerPath) stop \(id) 2>/dev/null")
+        guard isValidContainerId(id) else { return false }
+        let result = await ShellExecutor.runDirectAsync(dockerPath, arguments: ["stop", id])
         return result.exitCode == 0
     }
 
     func start(id: String) async -> Bool {
-        let result = await ShellExecutor.runAsync("\(dockerPath) start \(id) 2>/dev/null")
+        guard isValidContainerId(id) else { return false }
+        let result = await ShellExecutor.runDirectAsync(dockerPath, arguments: ["start", id])
         return result.exitCode == 0
     }
 
     func restart(id: String) async -> Bool {
-        let result = await ShellExecutor.runAsync("\(dockerPath) restart \(id) 2>/dev/null")
+        guard isValidContainerId(id) else { return false }
+        let result = await ShellExecutor.runDirectAsync(dockerPath, arguments: ["restart", id])
         return result.exitCode == 0
     }
 

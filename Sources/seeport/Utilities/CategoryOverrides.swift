@@ -2,8 +2,10 @@ import Foundation
 
 enum CategoryOverrides {
     private static let key = "seeport.categoryOverrides"
+    private static var cache: [UInt16: String]?
 
     static func load() -> [UInt16: String] {
+        if let cache { return cache }
         let dict = UserDefaults.standard.dictionary(forKey: key) as? [String: String] ?? [:]
         var result: [UInt16: String] = [:]
         for (k, v) in dict {
@@ -11,10 +13,12 @@ enum CategoryOverrides {
                 result[port] = v
             }
         }
+        cache = result
         return result
     }
 
     private static func save(_ overrides: [UInt16: String]) {
+        cache = overrides
         var dict: [String: String] = [:]
         for (k, v) in overrides {
             dict[String(k)] = v

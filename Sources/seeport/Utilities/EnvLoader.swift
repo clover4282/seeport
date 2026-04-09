@@ -22,12 +22,6 @@ enum EnvLoader {
         let candidates = [
             Bundle.main.bundleURL.deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent(".env"),
             URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent(".env"),
-            URL(fileURLWithPath: #filePath) // source dir fallback
-                .deletingLastPathComponent() // Utilities/
-                .deletingLastPathComponent() // seeport/
-                .deletingLastPathComponent() // Sources/
-                .deletingLastPathComponent() // project root
-                .appendingPathComponent(".env")
         ]
 
         for url in candidates {

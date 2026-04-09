@@ -5,14 +5,6 @@ enum PortDatabase {
         return portMap[port] ?? []
     }
 
-    private static let defaultServers = [
-        "Custom Application",
-        "Development Server",
-        "Internal Service",
-        "API Endpoint",
-        "Test Server"
-    ]
-
     private static let portMap: [UInt16: [String]] = [
         80:    ["Apache HTTP", "Nginx", "Caddy", "Lighttpd", "IIS"],
         443:   ["Nginx (HTTPS)", "Apache (SSL)", "Caddy", "Node.js HTTPS", "HAProxy"],

@@ -31,4 +31,36 @@ enum ShellExecutor {
             }
         }
     }
+
+    /// Execute a binary directly with an argument array (no shell interpolation).
+    @discardableResult
+    static func runDirect(_ executable: String, arguments: [String]) -> (output: String, exitCode: Int32) {
+        let process = Process()
+        let pipe = Pipe()
+
+        process.executableURL = URL(fileURLWithPath: executable)
+        process.arguments = arguments
+        process.standardOutput = pipe
+        process.standardError = pipe
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+        } catch {
+            return ("", -1)
+        }
+
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        let output = String(data: data, encoding: .utf8) ?? ""
+        return (output, process.terminationStatus)
+    }
+
+    static func runDirectAsync(_ executable: String, arguments: [String]) async -> (output: String, exitCode: Int32) {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let result = runDirect(executable, arguments: arguments)
+                continuation.resume(returning: result)
+            }
+        }
+    }
 }

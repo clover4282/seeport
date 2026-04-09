@@ -31,4 +31,18 @@ enum Constants {
         static let large: CGFloat = 12
         static let xlarge: CGFloat = 16
     }
+
+    enum Defaults {
+        static let autoRefreshEnabled = true
+        static let refreshInterval: TimeInterval = 5.0
+        static let showProcessIcons = true
+        static let notifyNewPort = true
+        static let notifyRemovedPort = true
+        static let notifyLocalPorts = true
+        static let notifyDockerPorts = true
+        static let notifySystemPorts = false
+        static let notifyOtherPorts = false
+        static let externalEditor: ExternalEditor = .vscode
+        static let shellApp: ShellApp = .iterm
+    }
 }

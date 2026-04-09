@@ -67,10 +67,10 @@ enum CategoryEngine {
         let lowerCommand = command.lowercased()
 
         if systemCommands.contains(command) || systemCommands.contains(where: { lowerCommand.hasPrefix($0.lowercased()) }) { return .system }
-        if databaseCommands.contains(where: { lowerCommand.contains($0) }) { return .backend }
-        if databasePorts.contains(port) { return .backend }
-        if frontendCommands.contains(where: { lowerCommand.contains($0) }) { return .backend }
-        if frontendPorts.contains(port) && lowerCommand.contains("node") { return .backend }
+        if databaseCommands.contains(where: { lowerCommand.contains($0) }) { return .database }
+        if databasePorts.contains(port) { return .database }
+        if frontendCommands.contains(where: { lowerCommand.contains($0) }) { return .frontend }
+        if frontendPorts.contains(port) && lowerCommand.contains("node") { return .frontend }
         if backendCommands.contains(where: { lowerCommand.contains($0) }) { return .backend }
         if backendPorts.contains(port) { return .backend }
 

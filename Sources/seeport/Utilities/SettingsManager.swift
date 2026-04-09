@@ -1,5 +1,4 @@
 import Foundation
-import Combine
 import ServiceManagement
 
 enum ExternalEditor: String, CaseIterable {
@@ -48,34 +47,35 @@ enum ShellApp: String, CaseIterable {
     }
 }
 
+@MainActor
 final class SettingsManager: ObservableObject {
     static let shared = SettingsManager()
 
-    @Published var autoRefreshEnabled: Bool = true {
+    @Published var autoRefreshEnabled: Bool = Constants.Defaults.autoRefreshEnabled {
         didSet { UserDefaults.standard.set(autoRefreshEnabled, forKey: "seeport.autoRefreshEnabled") }
     }
-    @Published var refreshInterval: TimeInterval = 5.0 {
+    @Published var refreshInterval: TimeInterval = Constants.Defaults.refreshInterval {
         didSet { UserDefaults.standard.set(refreshInterval, forKey: "seeport.refreshInterval") }
     }
-    @Published var showProcessIcons: Bool = true {
+    @Published var showProcessIcons: Bool = Constants.Defaults.showProcessIcons {
         didSet { UserDefaults.standard.set(showProcessIcons, forKey: "seeport.showProcessIcons") }
     }
-    @Published var notifyNewPort: Bool = true {
+    @Published var notifyNewPort: Bool = Constants.Defaults.notifyNewPort {
         didSet { UserDefaults.standard.set(notifyNewPort, forKey: "seeport.notifyNewPort") }
     }
-    @Published var notifyRemovedPort: Bool = true {
+    @Published var notifyRemovedPort: Bool = Constants.Defaults.notifyRemovedPort {
         didSet { UserDefaults.standard.set(notifyRemovedPort, forKey: "seeport.notifyRemovedPort") }
     }
-    @Published var notifyLocalPorts: Bool = true {
+    @Published var notifyLocalPorts: Bool = Constants.Defaults.notifyLocalPorts {
         didSet { UserDefaults.standard.set(notifyLocalPorts, forKey: "seeport.notifyLocalPorts") }
     }
-    @Published var notifyDockerPorts: Bool = true {
+    @Published var notifyDockerPorts: Bool = Constants.Defaults.notifyDockerPorts {
         didSet { UserDefaults.standard.set(notifyDockerPorts, forKey: "seeport.notifyDockerPorts") }
     }
-    @Published var notifySystemPorts: Bool = false {
+    @Published var notifySystemPorts: Bool = Constants.Defaults.notifySystemPorts {
         didSet { UserDefaults.standard.set(notifySystemPorts, forKey: "seeport.notifySystemPorts") }
     }
-    @Published var notifyOtherPorts: Bool = false {
+    @Published var notifyOtherPorts: Bool = Constants.Defaults.notifyOtherPorts {
         didSet { UserDefaults.standard.set(notifyOtherPorts, forKey: "seeport.notifyOtherPorts") }
     }
     @Published var externalEditor: ExternalEditor {
@@ -98,10 +98,15 @@ final class SettingsManager: ObservableObject {
     }
     @Published var launchAtLogin: Bool = true {
         didSet {
-            if launchAtLogin {
-                try? SMAppService.mainApp.register()
-            } else {
-                try? SMAppService.mainApp.unregister()
+            do {
+                if launchAtLogin {
+                    try SMAppService.mainApp.register()
+                } else {
+                    try SMAppService.mainApp.unregister()
+                }
+            } catch {
+                // Revert on failure so UI stays in sync
+                launchAtLogin = !launchAtLogin
             }
         }
     }
@@ -139,9 +144,9 @@ final class SettingsManager: ObservableObject {
         }
 
         let editorRaw = defaults.string(forKey: "seeport.externalEditor") ?? ""
-        externalEditor = ExternalEditor(rawValue: editorRaw) ?? .vscode
+        externalEditor = ExternalEditor(rawValue: editorRaw) ?? Constants.Defaults.externalEditor
         let shellRaw = defaults.string(forKey: "seeport.shellApp") ?? ""
-        shellApp = ShellApp(rawValue: shellRaw) ?? .iterm
+        shellApp = ShellApp(rawValue: shellRaw) ?? Constants.Defaults.shellApp
         customEditorPath = defaults.string(forKey: "seeport.customEditorPath") ?? ""
         customEditorArgs = defaults.string(forKey: "seeport.customEditorArgs") ?? ""
         customShellPath = defaults.string(forKey: "seeport.customShellPath") ?? ""
@@ -160,17 +165,17 @@ final class SettingsManager: ObservableObject {
     }
 
     func resetToDefaults() {
-        autoRefreshEnabled = true
-        refreshInterval = 5.0
-        showProcessIcons = true
-        notifyNewPort = true
-        notifyRemovedPort = true
-        notifyLocalPorts = true
-        notifyDockerPorts = true
-        notifySystemPorts = false
-        notifyOtherPorts = false
-        externalEditor = .vscode
-        shellApp = .iterm
+        autoRefreshEnabled = Constants.Defaults.autoRefreshEnabled
+        refreshInterval = Constants.Defaults.refreshInterval
+        showProcessIcons = Constants.Defaults.showProcessIcons
+        notifyNewPort = Constants.Defaults.notifyNewPort
+        notifyRemovedPort = Constants.Defaults.notifyRemovedPort
+        notifyLocalPorts = Constants.Defaults.notifyLocalPorts
+        notifyDockerPorts = Constants.Defaults.notifyDockerPorts
+        notifySystemPorts = Constants.Defaults.notifySystemPorts
+        notifyOtherPorts = Constants.Defaults.notifyOtherPorts
+        externalEditor = Constants.Defaults.externalEditor
+        shellApp = Constants.Defaults.shellApp
         customEditorPath = ""
         customEditorArgs = ""
         customShellPath = ""

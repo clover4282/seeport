@@ -16,14 +16,7 @@ struct MainPopoverView: View {
     }
 
     private var dockerContainerList: some View {
-        let query = viewModel.searchText.lowercased()
-        let containers = viewModel.dockerContainers.filter { c in
-            query.isEmpty ||
-            c.name.lowercased().contains(query) ||
-            c.image.lowercased().contains(query) ||
-            c.id.lowercased().contains(query) ||
-            c.ports.contains { String($0.hostPort).contains(query) }
-        }
+        let containers = viewModel.filteredDockerContainers
 
         return Group {
             if containers.isEmpty {
