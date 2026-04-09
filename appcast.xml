@@ -6,6 +6,29 @@
         <description>Most recent updates for Seeport</description>
         <language>en</language>
         <item>
+            <title>Version 1.9.1</title>
+            <sparkle:version>1.9.1</sparkle:version>
+            <sparkle:shortVersionString>1.9.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <ul>
+                    <li>Fix Docker port range mapping (e.g. 18000-18001) not being detected</li>
+                    <li>Fix frontend/database ports incorrectly categorized as backend</li>
+                    <li>Security: session token auth on WebServer, restricted CORS</li>
+                    <li>Security: shell injection prevention via direct process execution</li>
+                    <li>Performance: parallel working directory and icon loading</li>
+                    <li>Unified notification logic between refresh modes</li>
+                </ul>
+            ]]></description>
+            <pubDate>Wed, 09 Apr 2026 00:00:00 +0000</pubDate>
+            <enclosure
+                url="https://github.com/clover4282/seeport/releases/download/v1.9.1/Seeport-v1.9.1.zip"
+                type="application/octet-stream"
+                sparkle:edSignature="VbIHh8VQ4X03fHXGZAV2291BCm+s/ROkT/WLZJU+HBQIbn2svJSDoiYRWbu4muZfLKpol7ggFgVrTWX6sDZvBA=="
+                length="5941155"
+            />
+        </item>
+        <item>
             <title>Version 1.9</title>
             <sparkle:version>1.9</sparkle:version>
             <sparkle:shortVersionString>1.9</sparkle:shortVersionString>
