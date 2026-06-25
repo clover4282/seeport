@@ -3,18 +3,10 @@ import Combine
 import AppKit
 import UserNotifications
 
-enum FilterTab: String, CaseIterable {
-    case all = "All"
-    case local = "Local"
-    case docker = "Docker"
-    case favorites = "Favorites"
-}
-
 @MainActor
 final class PortListViewModel: ObservableObject {
     @Published var ports: [PortInfo] = []
     @Published var searchText = ""
-    @Published var selectedTab: FilterTab = .all
     @Published var isScanning = false
     @Published var lastScanTime: Date?
     @Published var portCount: Int = 0
@@ -57,16 +49,6 @@ final class PortListViewModel: ObservableObject {
     var filteredPorts: [PortInfo] {
         var result = ports
 
-        // Tab filter
-        switch selectedTab {
-        case .all, .docker:
-            break
-        case .local:
-            result = result.filter { $0.category != .system && $0.category != .other && $0.dockerContainer == nil }
-        case .favorites:
-            result = result.filter { $0.isFavorite }
-        }
-
         // Search filter
         if !searchText.isEmpty {
             let query = searchText.lowercased()
@@ -81,17 +63,6 @@ final class PortListViewModel: ObservableObject {
         return result
     }
 
-    var filteredDockerContainers: [DockerContainer] {
-        guard !searchText.isEmpty else { return dockerContainers }
-        let query = searchText.lowercased()
-        return dockerContainers.filter { c in
-            c.name.lowercased().contains(query) ||
-            c.image.lowercased().contains(query) ||
-            c.id.lowercased().contains(query) ||
-            c.ports.contains { String($0.hostPort).contains(query) }
-        }
-    }
-
     var groupedPorts: [(PortCategory, [PortInfo])] {
         let favoritePorts = filteredPorts.filter { $0.isFavorite }
         let nonFavoritePorts = filteredPorts.filter { !$0.isFavorite }
@@ -103,7 +74,7 @@ final class PortListViewModel: ObservableObject {
         }
 
         let grouped = Dictionary(grouping: nonFavoritePorts, by: \.category)
-        let order: [PortCategory] = [.frontend, .backend, .database, .docker, .system, .other]
+        let order: [PortCategory] = [.local, .docker, .app, .system]
         result += order.compactMap { category in
             guard let items = grouped[category], !items.isEmpty else { return nil }
             return (category, items.sorted { $0.port < $1.port })
@@ -161,6 +132,7 @@ final class PortListViewModel: ObservableObject {
                 port: port.port,
                 command: port.process.name,
                 isDocker: false,
+                isApp: ProcessService.isApplication(pid: port.process.pid),
                 dockerImage: nil
             )
             return PortInfo(
@@ -237,6 +209,7 @@ final class PortListViewModel: ObservableObject {
                 port: port.port,
                 command: port.process.name,
                 isDocker: isDocker,
+                isApp: isDocker ? false : ProcessService.isApplication(pid: port.process.pid),
                 dockerImage: container?.image
             )
             return PortInfo(
@@ -353,11 +326,10 @@ final class PortListViewModel: ObservableObject {
 
     private func shouldNotify(for category: PortCategory) -> Bool {
         switch category {
-        case .frontend, .backend: return settings.notifyLocalPorts
+        case .local: return settings.notifyLocalPorts
         case .docker: return settings.notifyDockerPorts
+        case .app: return settings.notifyAppPorts
         case .system: return settings.notifySystemPorts
-        case .other: return settings.notifyOtherPorts
-        case .database: return settings.notifyLocalPorts
         case .favorites: return false
         }
     }
@@ -435,13 +407,13 @@ final class PortListViewModel: ObservableObject {
         }
     }
 
-    func moveToOther(_ port: PortInfo) {
-        CategoryOverrides.setOther(port.port)
+    func moveToSystem(_ port: PortInfo) {
+        CategoryOverrides.setSystem(port.port)
         if let index = ports.firstIndex(where: { $0.port == port.port && $0.process.pid == port.process.pid }) {
             ports[index] = PortInfo(
                 port: port.port,
                 process: port.process,
-                category: .other,
+                category: .system,
                 address: port.address,
                 isFavorite: port.isFavorite,
                 dockerContainer: port.dockerContainer,
@@ -476,24 +448,6 @@ final class PortListViewModel: ObservableObject {
         CategoryOverrides.categoryFor(port.port) != nil
     }
 
-    func dockerAction(_ action: String, containerId: String) async {
-        let success: Bool
-        switch action {
-        case "stop":
-            success = await dockerService.stop(id: containerId)
-        case "start":
-            success = await dockerService.start(id: containerId)
-        case "restart":
-            success = await dockerService.restart(id: containerId)
-        default:
-            return
-        }
-        if success {
-            try? await Task.sleep(nanoseconds: 500_000_000)
-            await refresh()
-        }
-    }
-
     func killProcess(_ port: PortInfo) async {
         let success: Bool
         if let container = port.dockerContainer {
@@ -507,12 +461,4 @@ final class PortListViewModel: ObservableObject {
         }
     }
 
-    func tabCount(for tab: FilterTab) -> Int {
-        switch tab {
-        case .all: return ports.count
-        case .local: return ports.filter { $0.category != .system && $0.category != .other && $0.dockerContainer == nil }.count
-        case .docker: return dockerContainers.count
-        case .favorites: return ports.filter { $0.isFavorite }.count
-        }
-    }
 }

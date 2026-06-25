@@ -5,7 +5,7 @@ struct PortRowView: View {
     let processIcon: NSImage?
     let onToggleFavorite: () -> Void
     let onKill: () -> Void
-    let onMoveToOther: () -> Void
+    let onMoveToSystem: () -> Void
     var onRestore: (() -> Void)?
 
     private let settings = SettingsManager.shared
@@ -16,6 +16,18 @@ struct PortRowView: View {
 
     var body: some View {
         HStack(spacing: Constants.Spacing.large) {
+            // Favorite toggle (left edge)
+            Button(action: {
+                onToggleFavorite()
+            }) {
+                Image(systemName: port.isFavorite ? "star.fill" : "star")
+                    .font(.system(size: 11))
+                    .foregroundColor(port.isFavorite ? .yellow : Constants.Colors.textSecondary.opacity(0.4))
+                    .frame(width: 16)
+            }
+            .buttonStyle(.plain)
+            .hoverCursor()
+
             // Port number (click to open in browser)
             let isManualOverride = CategoryOverrides.categoryFor(port.port) != nil
             let baseColor = isManualOverride ? Color.purple : port.category.color
@@ -58,7 +70,6 @@ struct PortRowView: View {
                             .font(Constants.Fonts.processName)
                             .foregroundColor(Constants.Colors.textPrimary)
                             .lineLimit(1)
-                        portTagBadge
                     }
                 }
 
@@ -84,20 +95,9 @@ struct PortRowView: View {
             }
 
             Spacer()
-
-            // Favorite toggle (always visible)
-            Button(action: {
-                onToggleFavorite()
-            }) {
-                Image(systemName: port.isFavorite ? "star.fill" : "star")
-                    .font(.system(size: 11))
-                    .foregroundColor(port.isFavorite ? .yellow : Constants.Colors.textSecondary.opacity(0.4))
-            }
-            .buttonStyle(.plain)
-            .hoverCursor()
         }
         .padding(.horizontal, Constants.Spacing.xlarge)
-        .padding(.vertical, Constants.Spacing.medium)
+        .frame(height: Constants.rowHeight)
         .background(isHovering ? Constants.Colors.cardBackground : Color.clear)
         .cornerRadius(6)
         .onTapGesture {
@@ -248,8 +248,6 @@ struct PortRowView: View {
 
                 detailSectionHeader("Classification")
                 detailRow("Category", port.category.rawValue)
-                let tag = CategoryEngine.portTag(port: port.port, dockerImage: nil)
-                detailRow("Tag", tag)
 
                 if let projectPath = port.projectPath {
                     Divider().background(Color.white.opacity(0.06))
@@ -273,14 +271,14 @@ struct PortRowView: View {
                         showPopover = false
                     }
 
-                    // Move to Other / Restore
-                    if port.category == .docker || port.category == .backend {
+                    // Move to System / Restore
+                    if port.category == .local {
                         actionButton(
                             icon: "arrow.right.square",
-                            label: "Move to Other",
+                            label: "Move to System",
                             color: .gray
                         ) {
-                            onMoveToOther()
+                            onMoveToSystem()
                             showPopover = false
                         }
                     } else if let onRestore = onRestore {
@@ -296,7 +294,7 @@ struct PortRowView: View {
                 }
 
                 // Kill button (Docker / Local Server only)
-                if port.category == .docker || port.category == .backend {
+                if port.category == .docker || port.category == .local || port.category == .app {
                     if showKillConfirm {
                         VStack(spacing: 4) {
                             if let container = port.dockerContainer {

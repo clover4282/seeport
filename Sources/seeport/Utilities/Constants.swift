@@ -3,6 +3,8 @@ import SwiftUI
 enum Constants {
     static let popoverWidth: CGFloat = 420
     static let popoverHeight: CGFloat = 600
+    /// Uniform height for every port row (single, cluster primary, cluster extra).
+    static let rowHeight: CGFloat = 48
     static let defaultRefreshInterval: TimeInterval = 5.0
     static let menuBarIcon = "network"
 
@@ -40,8 +42,8 @@ enum Constants {
         static let notifyRemovedPort = true
         static let notifyLocalPorts = true
         static let notifyDockerPorts = true
+        static let notifyAppPorts = false
         static let notifySystemPorts = false
-        static let notifyOtherPorts = false
         static let externalEditor: ExternalEditor = .vscode
         static let shellApp: ShellApp = .iterm
     }

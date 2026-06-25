@@ -6,7 +6,7 @@ struct PortListView: View {
     let processIcons: [Int32: NSImage]
     let onToggleFavorite: (PortInfo) -> Void
     let onKill: (PortInfo) -> Void
-    let onMoveToOther: (PortInfo) -> Void
+    let onMoveToSystem: (PortInfo) -> Void
     var onRestore: ((PortInfo) -> Void)?
 
     var body: some View {
@@ -18,15 +18,15 @@ struct PortListView: View {
                     ForEach(groupedPorts, id: \.0) { category, ports in
                         CategoryHeaderView(category: category, count: ports.count)
 
-                        ForEach(ports) { port in
-                            PortRowView(
-                                port: port,
-                                processIcon: processIcons[port.process.pid],
-                                onToggleFavorite: { onToggleFavorite(port) },
-                                onKill: { onKill(port) },
-                                onMoveToOther: { onMoveToOther(port) },
-                                onRestore: CategoryOverrides.categoryFor(port.port) != nil ? { onRestore?(port) } : nil
-                            )
+                        ForEach(clusters(ports), id: \.key) { cluster in
+                            clusterRow(cluster)
+                                .overlay(alignment: .leading) {
+                                    RoundedRectangle(cornerRadius: 1.5)
+                                        .fill(cluster.ports[0].category.color.opacity(0.5))
+                                        .frame(width: 3)
+                                        .padding(.vertical, 8)
+                                        .padding(.leading, 7)
+                                }
                         }
                     }
                 }
@@ -35,43 +35,42 @@ struct PortListView: View {
         }
     }
 
-    private struct PortGroup {
-        let containerName: String?
-        let containerImage: String?
-        let ports: [PortInfo]
+    @ViewBuilder
+    private func clusterRow(_ cluster: (key: String, ports: [PortInfo])) -> some View {
+        if cluster.ports.count == 1 {
+            let port = cluster.ports[0]
+            PortRowView(
+                port: port,
+                processIcon: processIcons[port.process.pid],
+                onToggleFavorite: { onToggleFavorite(port) },
+                onKill: { onKill(port) },
+                onMoveToSystem: { onMoveToSystem(port) },
+                onRestore: CategoryOverrides.categoryFor(port.port) != nil ? { onRestore?(port) } : nil
+            )
+        } else {
+            PortClusterView(
+                ports: cluster.ports,
+                processIcons: processIcons,
+                onToggleFavorite: onToggleFavorite,
+                onKill: onKill,
+                onMoveToSystem: onMoveToSystem,
+                onRestore: onRestore
+            )
+        }
     }
 
-    private func groupByContainer(_ ports: [PortInfo]) -> [PortGroup] {
-        var containerGroups: [String: (image: String, ports: [PortInfo])] = [:]
-        var standalone: [PortInfo] = []
-
+    /// Groups ports that share an owner (same Docker container, or same process
+    /// PID for local/app ports) so a multi-port owner renders as one entry.
+    /// First-appearance order is preserved; ports within a cluster are sorted.
+    private func clusters(_ ports: [PortInfo]) -> [(key: String, ports: [PortInfo])] {
+        var order: [String] = []
+        var map: [String: [PortInfo]] = [:]
         for port in ports {
-            if let container = port.dockerContainer {
-                var group = containerGroups[container.name] ?? (image: container.image, ports: [])
-                group.ports.append(port)
-                containerGroups[container.name] = group
-            } else {
-                standalone.append(port)
-            }
+            let key = port.dockerContainer.map { "docker:\($0.id)" } ?? "pid:\(port.process.pid)"
+            if map[key] == nil { order.append(key) }
+            map[key, default: []].append(port)
         }
-
-        var result: [PortGroup] = []
-
-        // Container groups first (only show group wrapper if 2+ ports)
-        for (name, group) in containerGroups.sorted(by: { $0.key < $1.key }) {
-            if group.ports.count >= 2 {
-                result.append(PortGroup(containerName: name, containerImage: group.image, ports: group.ports))
-            } else {
-                standalone.append(contentsOf: group.ports)
-            }
-        }
-
-        // Standalone ports
-        if !standalone.isEmpty {
-            result.append(PortGroup(containerName: nil, containerImage: nil, ports: standalone.sorted { $0.port < $1.port }))
-        }
-
-        return result
+        return order.map { key in (key, map[key]!.sorted { $0.port < $1.port }) }
     }
 
     private var emptyState: some View {
@@ -90,36 +89,5 @@ struct PortListView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.vertical, 40)
-    }
-}
-
-struct ContainerGroupView<Content: View>: View {
-    let name: String
-    let image: String
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 6) {
-                Image(systemName: "shippingbox.fill")
-                    .font(.system(size: 10))
-                    .foregroundColor(.cyan)
-                Text(name)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.cyan)
-                Text(image)
-                    .font(.system(size: 10))
-                    .foregroundColor(Constants.Colors.textSecondary)
-                Spacer()
-            }
-            .padding(.horizontal, Constants.Spacing.xlarge)
-            .padding(.top, Constants.Spacing.medium)
-            .padding(.bottom, 2)
-
-            content
-        }
-        .background(Color.cyan.opacity(0.03))
-        .cornerRadius(8)
-        .padding(.horizontal, Constants.Spacing.small)
     }
 }

@@ -2,6 +2,18 @@ import Foundation
 import AppKit
 
 enum ProcessService {
+    /// True if the pid belongs to a GUI application (e.g. Google Drive, Dropbox)
+    /// rather than a terminal-launched dev server (node, python, go, …).
+    /// Dev servers run as plain Unix processes outside any `.app` bundle.
+    static func isApplication(pid: Int32) -> Bool {
+        if let app = NSRunningApplication(processIdentifier: pid), app.bundleIdentifier != nil {
+            return true
+        }
+        // Helper processes live inside a .app bundle even when not registered as apps.
+        guard let path = getExecutablePath(pid: pid) else { return false }
+        return path.contains(".app/")
+    }
+
     static func iconOrNil(for pid: Int32) -> NSImage? {
         if let app = NSRunningApplication(processIdentifier: pid), let appIcon = app.icon {
             return appIcon

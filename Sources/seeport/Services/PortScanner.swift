@@ -83,6 +83,9 @@ actor PortScanner {
                     let addrStr = String(cString: buf)
                     if addrStr == "::" {
                         address = "0.0.0.0"
+                    } else if addrStr.hasPrefix("::ffff:") {
+                        // IPv4-mapped IPv6 — display the readable IPv4 form
+                        address = String(addrStr.dropFirst("::ffff:".count))
                     } else {
                         address = addrStr
                     }

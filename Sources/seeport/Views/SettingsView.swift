@@ -150,9 +150,9 @@ struct SettingsView: View {
                 flatDivider
                 flatToggleRow("Docker", isOn: $settings.notifyDockerPorts)
                 flatDivider
-                flatToggleRow("System", isOn: $settings.notifySystemPorts)
+                flatToggleRow("App", isOn: $settings.notifyAppPorts)
                 flatDivider
-                flatToggleRow("Other", isOn: $settings.notifyOtherPorts)
+                flatToggleRow("System", isOn: $settings.notifySystemPorts)
             }
 
             flatSection("Permission") {

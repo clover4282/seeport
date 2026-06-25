@@ -26,9 +26,9 @@ enum CategoryOverrides {
         UserDefaults.standard.set(dict, forKey: key)
     }
 
-    static func setOther(_ port: UInt16) {
+    static func setSystem(_ port: UInt16) {
         var overrides = load()
-        overrides[port] = PortCategory.other.rawValue
+        overrides[port] = PortCategory.system.rawValue
         save(overrides)
     }
 

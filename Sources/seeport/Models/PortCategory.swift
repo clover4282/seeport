@@ -2,36 +2,30 @@ import SwiftUI
 
 enum PortCategory: String, CaseIterable, Identifiable {
     case favorites = "FAVORITES"
-    case frontend = "FRONTEND"
-    case backend = "LOCAL SERVER"
-    case database = "DATABASE"
+    case local = "LOCAL"
     case docker = "DOCKER"
+    case app = "APP"
     case system = "SYSTEM"
-    case other = "OTHER"
 
     var id: String { rawValue }
 
     var icon: String {
         switch self {
         case .favorites: return "star.fill"
-        case .frontend: return "globe"
-        case .backend: return "server.rack"
-        case .database: return "cylinder"
+        case .local: return "server.rack"
         case .docker: return "shippingbox"
+        case .app: return "macwindow"
         case .system: return "gearshape"
-        case .other: return "ellipsis.circle"
         }
     }
 
     var color: Color {
         switch self {
         case .favorites: return .yellow
-        case .frontend: return .blue
-        case .backend: return .green
-        case .database: return .orange
+        case .local: return .blue
         case .docker: return .cyan
+        case .app: return .purple
         case .system: return .gray
-        case .other: return .secondary
         }
     }
 }

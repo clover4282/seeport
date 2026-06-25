@@ -157,6 +157,10 @@ actor DockerService {
         return ports.map { ("0.0.0.0", $0) }
     }
 
+    /// Max number of ports to expand from a published range, to avoid flooding
+    /// the UI when a container maps a very wide range (e.g. "8000-9000").
+    private static let maxRangeExpansion = 100
+
     private func parsePortOrRange(_ str: String) -> [UInt16] {
         if let port = UInt16(str) {
             return [port]
@@ -166,9 +170,10 @@ actor DockerService {
         guard parts.count == 2,
               let start = UInt16(parts[0]),
               let end = UInt16(parts[1]),
-              start <= end,
-              end - start < 100 // safety limit
+              start <= end
         else { return [] }
+        // Wider than the cap: surface the range start so the mapping isn't lost entirely.
+        guard Int(end) - Int(start) < Self.maxRangeExpansion else { return [start] }
         return Array(start...end)
     }
 
@@ -224,18 +229,6 @@ actor DockerService {
     func stop(id: String) async -> Bool {
         guard isValidContainerId(id) else { return false }
         let result = await ShellExecutor.runDirectAsync(dockerPath, arguments: ["stop", id])
-        return result.exitCode == 0
-    }
-
-    func start(id: String) async -> Bool {
-        guard isValidContainerId(id) else { return false }
-        let result = await ShellExecutor.runDirectAsync(dockerPath, arguments: ["start", id])
-        return result.exitCode == 0
-    }
-
-    func restart(id: String) async -> Bool {
-        guard isValidContainerId(id) else { return false }
-        let result = await ShellExecutor.runDirectAsync(dockerPath, arguments: ["restart", id])
         return result.exitCode == 0
     }
 

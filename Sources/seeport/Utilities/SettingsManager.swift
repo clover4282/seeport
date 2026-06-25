@@ -72,11 +72,11 @@ final class SettingsManager: ObservableObject {
     @Published var notifyDockerPorts: Bool = Constants.Defaults.notifyDockerPorts {
         didSet { UserDefaults.standard.set(notifyDockerPorts, forKey: "seeport.notifyDockerPorts") }
     }
+    @Published var notifyAppPorts: Bool = Constants.Defaults.notifyAppPorts {
+        didSet { UserDefaults.standard.set(notifyAppPorts, forKey: "seeport.notifyAppPorts") }
+    }
     @Published var notifySystemPorts: Bool = Constants.Defaults.notifySystemPorts {
         didSet { UserDefaults.standard.set(notifySystemPorts, forKey: "seeport.notifySystemPorts") }
-    }
-    @Published var notifyOtherPorts: Bool = Constants.Defaults.notifyOtherPorts {
-        didSet { UserDefaults.standard.set(notifyOtherPorts, forKey: "seeport.notifyOtherPorts") }
     }
     @Published var externalEditor: ExternalEditor {
         didSet { UserDefaults.standard.set(externalEditor.rawValue, forKey: "seeport.externalEditor") }
@@ -136,11 +136,11 @@ final class SettingsManager: ObservableObject {
         if defaults.object(forKey: "seeport.notifyDockerPorts") != nil {
             notifyDockerPorts = defaults.bool(forKey: "seeport.notifyDockerPorts")
         }
+        if defaults.object(forKey: "seeport.notifyAppPorts") != nil {
+            notifyAppPorts = defaults.bool(forKey: "seeport.notifyAppPorts")
+        }
         if defaults.object(forKey: "seeport.notifySystemPorts") != nil {
             notifySystemPorts = defaults.bool(forKey: "seeport.notifySystemPorts")
-        }
-        if defaults.object(forKey: "seeport.notifyOtherPorts") != nil {
-            notifyOtherPorts = defaults.bool(forKey: "seeport.notifyOtherPorts")
         }
 
         let editorRaw = defaults.string(forKey: "seeport.externalEditor") ?? ""
@@ -172,8 +172,8 @@ final class SettingsManager: ObservableObject {
         notifyRemovedPort = Constants.Defaults.notifyRemovedPort
         notifyLocalPorts = Constants.Defaults.notifyLocalPorts
         notifyDockerPorts = Constants.Defaults.notifyDockerPorts
+        notifyAppPorts = Constants.Defaults.notifyAppPorts
         notifySystemPorts = Constants.Defaults.notifySystemPorts
-        notifyOtherPorts = Constants.Defaults.notifyOtherPorts
         externalEditor = Constants.Defaults.externalEditor
         shellApp = Constants.Defaults.shellApp
         customEditorPath = ""

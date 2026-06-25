@@ -112,7 +112,8 @@ final class WebServer {
         ports = ports.map { port in
             let container = containers.first { c in c.ports.contains { $0.hostPort == port.port } }
             let isDocker = container != nil
-            let category = CategoryEngine.categorize(port: port.port, command: port.process.name, isDocker: isDocker, dockerImage: container?.image)
+            let isApp = isDocker ? false : ProcessService.isApplication(pid: port.process.pid)
+            let category = CategoryEngine.categorize(port: port.port, command: port.process.name, isDocker: isDocker, isApp: isApp, dockerImage: container?.image)
             return PortInfo(
                 port: port.port,
                 process: port.process,

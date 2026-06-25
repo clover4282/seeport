@@ -13,7 +13,7 @@ struct PortInfo: Identifiable, Hashable {
     init(
         port: UInt16,
         process: ProcessInfo,
-        category: PortCategory = .other,
+        category: PortCategory = .local,
         address: String = "127.0.0.1",
         isFavorite: Bool = false,
         dockerContainer: DockerContainer? = nil,
