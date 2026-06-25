@@ -6,6 +6,24 @@
         <description>Most recent updates for Seeport</description>
         <language>en</language>
         <item>
+            <title>Version 1.10.0</title>
+            <sparkle:version>1.10.0</sparkle:version>
+            <sparkle:shortVersionString>1.10.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <ul>
+                    <li>Rework port categories to Local/Docker/App/System and group multi-port owners</li>
+                </ul>
+            ]]></description>
+            <pubDate>Thu, 25 Jun 2026 12:36:11 +0000</pubDate>
+            <enclosure
+                url="https://github.com/clover4282/seeport/releases/download/v1.10.0/Seeport-v1.10.0.zip"
+                type="application/octet-stream"
+                sparkle:edSignature="fGlHq9vyYBz2yBiX1ThCv243OhG5o2rYcIfQmGELJzhZfB+D4fQ0Vb+tINtmGAWhoSxrMfXDn7fc3QEOQpdCCw=="
+                length="5808711"
+            />
+        </item>
+        <item>
             <title>Version 1.8</title>
             <sparkle:version>1.8</sparkle:version>
             <sparkle:shortVersionString>1.8</sparkle:shortVersionString>
