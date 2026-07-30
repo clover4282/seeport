@@ -6,6 +6,27 @@
         <description>Most recent updates for Seeport</description>
         <language>en</language>
         <item>
+            <title>Version 1.10.2</title>
+            <sparkle:version>1.10.2</sparkle:version>
+            <sparkle:shortVersionString>1.10.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <ul>
+                    <li>Classify Python servers as Local Dev</li>
+                    <li>Fix v1.10.1 appcast notes</li>
+                    <li>Update appcast.xml for v1.10.1</li>
+                    <li>Release v1.10.1</li>
+                </ul>
+            ]]></description>
+            <pubDate>Thu, 30 Jul 2026 03:19:00 +0000</pubDate>
+            <enclosure
+                url="https://github.com/clover4282/seeport/releases/download/v1.10.2/Seeport-v1.10.2.zip"
+                type="application/octet-stream"
+                sparkle:edSignature="q0z+S/oVr00XQaEH/pJ4VSFd28gAZzOWzik9BTP5S1qNGLmBgA054Tfs0Fl5+/Q1WmuBquz5R0HDGHo9ySywDA=="
+                length="5810374"
+            />
+        </item>
+        <item>
             <title>Version 1.10.1</title>
             <sparkle:version>1.10.1</sparkle:version>
             <sparkle:shortVersionString>1.10.1</sparkle:shortVersionString>
