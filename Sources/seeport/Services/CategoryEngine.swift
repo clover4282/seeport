@@ -42,6 +42,7 @@ enum CategoryEngine {
             return .system
         }
 
+        if lowerCommand == "python" || lowerCommand.hasPrefix("python3") { return .local }
         if isApp { return .app }
 
         return .local
