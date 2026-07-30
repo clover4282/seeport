@@ -146,7 +146,7 @@ struct SettingsView: View {
             }
 
             flatSection("Categories") {
-                flatToggleRow("Local", isOn: $settings.notifyLocalPorts)
+                flatToggleRow("Local Dev", isOn: $settings.notifyLocalPorts)
                 flatDivider
                 flatToggleRow("Docker", isOn: $settings.notifyDockerPorts)
                 flatDivider

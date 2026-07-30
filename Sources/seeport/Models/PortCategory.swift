@@ -2,7 +2,7 @@ import SwiftUI
 
 enum PortCategory: String, CaseIterable, Identifiable {
     case favorites = "FAVORITES"
-    case local = "LOCAL"
+    case local = "LOCAL DEV"
     case docker = "DOCKER"
     case app = "APP"
     case system = "SYSTEM"

@@ -85,11 +85,11 @@ enum HTMLTemplate {
     .status-bar .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #22c55e; margin-right: 6px; }
     .empty { text-align: center; padding: 60px 0; color: #666; }
     .empty svg { width: 48px; height: 48px; fill: #444; margin-bottom: 12px; }
-    .cat-local { color: #3b82f6; }
+    .cat-local-dev { color: #3b82f6; }
     .cat-docker { color: #00c8ff; }
     .cat-app { color: #a855f7; }
     .cat-system { color: #888; }
-    .dot-local { background: #3b82f6; }
+    .dot-local-dev { background: #3b82f6; }
     .dot-docker { background: #00c8ff; }
     .dot-app { background: #a855f7; }
     .dot-system { background: #888; }
@@ -121,7 +121,7 @@ enum HTMLTemplate {
     let allPorts = [];
     let activeTab = 'all';
     const TABS = [{id:'all',label:'All'},{id:'favorites',label:'Favorites'},{id:'dev',label:'Dev First'}];
-    const CAT_ORDER = ['LOCAL','DOCKER','APP','SYSTEM'];
+    const CAT_ORDER = ['LOCAL DEV','DOCKER','APP','SYSTEM'];
 
     async function fetchPorts() {
         try {
@@ -135,7 +135,7 @@ enum HTMLTemplate {
         const q = document.getElementById('search').value.toLowerCase();
         let ports = allPorts;
         if (activeTab === 'favorites') ports = ports.filter(p => p.isFavorite);
-        if (activeTab === 'dev') ports = ports.filter(p => ['LOCAL','DOCKER'].includes(p.category));
+        if (activeTab === 'dev') ports = ports.filter(p => ['LOCAL DEV','DOCKER'].includes(p.category));
         if (q) ports = ports.filter(p =>
             String(p.port).includes(q) ||
             p.process.name.toLowerCase().includes(q) ||
@@ -147,7 +147,7 @@ enum HTMLTemplate {
         const tabCounts = {
             all: allPorts.length,
             favorites: allPorts.filter(p => p.isFavorite).length,
-            dev: allPorts.filter(p => ['LOCAL','DOCKER'].includes(p.category)).length
+            dev: allPorts.filter(p => ['LOCAL DEV','DOCKER'].includes(p.category)).length
         };
         document.getElementById('tabs').innerHTML = TABS.map(t =>
             `<button class="tab ${activeTab===t.id?'active':''}" onclick="activeTab='${t.id}';render()">${t.label}<span class="count">${tabCounts[t.id]}</span></button>`
@@ -161,7 +161,7 @@ enum HTMLTemplate {
         CAT_ORDER.forEach(cat => {
             if (!grouped[cat]) return;
             const items = grouped[cat].sort((a,b) => a.port - b.port);
-            const cl = cat.toLowerCase();
+            const cl = cat.toLowerCase().replaceAll(' ', '-');
             html += `<div class="category-header"><div class="dot dot-${cl}"></div>${cat}<span class="cat-count">${items.length}</span></div>`;
             items.forEach(p => {
                 const docker = p.docker ? `<span class="docker-badge">Docker</span>` : '';
